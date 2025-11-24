@@ -1,9 +1,3 @@
-这是一个为您准备的专业 README 模板。它采用了学术界开源项目常用的双语格式，语气正式，并清晰地列出了您要求的代码发布时间表。
-
-您只需将 `[link]` 处替换为实际的链接即可。
-
-***
-
 # AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection
 
 **[English]**
