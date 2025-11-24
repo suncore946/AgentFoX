@@ -1,31 +1,31 @@
 # AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection
 
-[English](README_EN.md)
+[中文](README_ZH.md)
 
-### 📄 概述
-本仓库提供发表在 arXiv 上的论文 **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection** 的代码实现与数据集。
-
-### 📅 发布计划
-我们正在逐步整理并发布与项目相关的资源
-
-- [ ] **2025/11（11 月底）**：发布 **X-Fuse 数据集**。
-- [ ] **2025/12（12 月底）**：发布 **验证代码**（评估脚本及预训练模型）。
-- [ ] **2026/01（1 月底）**：发布用于快速集成的 **快速接入 / 推理代码**。
-
-### 📝 简介
-随着 AI 生成图像（AIGI）的逼真度日益提高，迫切需要能够可靠区分合成内容与真实影像的取证工具。现有的检测器通常针对特定的伪造伪影（如频域模式或语义不一致）进行定制，导致性能局限，有时甚至会产生相互矛盾的判断。针对这些局限性，我们提出了 AgentFoX，这是一个由大语言模型驱动的框架，它将 AIGI 检测重新定义为一个动态的、多阶段的分析过程。我们的方法采用了一种快速集成融合机制，并由包含校准专家画像（Calibrated Expert Profiles）和上下文聚类画像（Contextual Clustering Profiles）的精选知识库提供指导。在推理过程中，智能体首先进行高层语义评估，随后过渡到对信号级专家证据进行细粒度的、上下文感知的综合，并通过结构化推理解决矛盾。AgentFoX 不再仅返回粗糙的二元输出，而是生成一份详细的、人类可读的取证报告来证实其判决，从而增强了实际部署中的可解释性和可信度。除了提供一种新颖的检测解决方案外，这项工作还引入了一种可扩展的智能体范式（Agentic Paradigm），有助于智能集成未来及不断发展的取证工具。
+### 📄 Overview
+This repository provides the official code implementation and dataset for the paper AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection, published on arXiv.
 
 
-### 📂 X-Fuse 数据集
-*预计于 11 月底发布*
+### 📅 Release Roadmap
+We are gradually organizing and releasing resources related to this project:
 
-**X-Fuse** 数据集专门用于评估具备可解释性的 AI 生成图像检测，涵盖多种生成模型的丰富样本。
+- [ ] **2025/11 (End of Nov)**: Release the **X-Fuse Dataset**.
+- [ ] **2025/12 (End of Dec)**: Release **Verification Code** (evaluation scripts and pre-trained models).
+- [ ] **2026/01 (End of Jan)**: Release **Quick Access / Inference Code** for rapid integration.
 
-- **下载链接**：即将推出
-- **数据结构**：将在发布时更新详细信息
+### 📝 Introduction
+The increasing realism of AI-Generated Images (AIGI) has created an urgent need for forensic tools capable of reliably distinguishing synthetic content from authentic imagery. Existing detectors are typically tailored to specific forgery artifacts—such as frequency-domain patterns or semantic inconsistencies—leading to specialized performance and, at times, conflicting judgments. To address these limitations, we present **AgentFoX**, a Large Language Model–driven framework that redefines AIGI detection as a dynamic, multi-phase analytical process. Our approach employs a quick-integration fusion mechanism guided by a curated knowledge base comprising calibrated Expert Profiles and contextual Clustering Profiles. During inference, the agent begins with high-level semantic assessment, then transitions to fine-grained, context-aware synthesis of signal-level expert evidence, resolving contradictions through structured reasoning. Instead of returning a coarse binary output, AgentFoX produces a detailed, human-readable forensic report that substantiates its verdict, enhancing interpretability and trustworthiness for real-world deployment. Beyond providing a novel detection solution, this work introduces a scalable agentic paradigm that facilitates intelligent integration of future and evolving forensic tools.
 
-### 🚀 使用指南
-TODO: 使用指南将在代码发布时提供，敬请期待。
+### 📂 X-Fuse Dataset
+*Scheduled for release at the end of November*
 
-### 📧 联系方式
-如对代码或数据集有任何疑问，欢迎提交 Issue 或邮件联系：2453043007@mails.szu.edu.cn
+The **X-Fuse** dataset is specifically designed for evaluating explainable AI-generated image detection, covering a rich variety of samples from multiple generative models.
+
+- **Download Link**: Coming soon.
+- **Data Structure**: Details will be updated upon release.
+
+### 🚀 Usage Guide
+TODO: The usage guide will be provided when the code is released. Stay tuned.
+
+### 📧 Contact
+If you have any questions regarding the code or dataset, please feel free to open an Issue or contact us via email: 2453043007@mails.szu.edu.cn
