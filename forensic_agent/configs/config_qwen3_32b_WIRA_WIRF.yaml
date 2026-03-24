@@ -1,0 +1,158 @@
+# Agent推理配置
+agent:
+  max_iterations: 40
+  # 是否引入校准
+  open_calibration: true
+  # 是否引入执行聚类
+  open_clustering: true
+  # 是否引入语义分析
+  open_semantic: true
+  # 是否引入专家分析
+  open_expert: false
+  agent_template: "./forensic_agent/configs/agent_template.txt"
+  reporter:
+    prompt_path: "./forensic_agent/configs/prompts/reporter_prompt.txt"
+  save_dir: "./outputs/agent_results_confuse_qwen3_WildRF_WIRA"
+  expert_models: 
+    - "DRCT"
+    - "SPAI"
+    - "RINE"
+    - "PatchShuffle"
+
+# LLM配置 - Agent推理引擎
+llm:
+  model: "qwen3:8b"
+  base_url:
+    # - "http://localhost:11435"
+    # - "http://localhost:11436"
+    # - "http://localhost:11437"
+    # - "http://localhost:11438"
+    - "http://localhost:11439"
+    - "http://localhost:11440"
+    - "http://localhost:11441"
+    - "http://localhost:11442"
+
+    - "http://172.31.224.52:11435"
+    - "http://172.31.224.52:11436"
+    - "http://172.31.224.52:11437"
+    - "http://172.31.224.52:11438"
+    - "http://172.31.224.52:11439"
+    - "http://172.31.224.52:11440"
+    # - "http://172.31.224.52:11441"
+    # - "http://172.31.224.52:11442"
+
+    - "http://172.31.220.65:11435"
+    - "http://172.31.220.65:11436"
+    - "http://172.31.220.65:11437"
+    - "http://172.31.220.65:11438"
+    - "http://172.31.220.65:11439"
+    - "http://172.31.220.65:11440"
+    - "http://172.31.220.65:11441"
+    - "http://172.31.220.65:11442"
+
+    - "http://172.31.220.66:11435"
+    - "http://172.31.220.66:11436"
+    - "http://172.31.220.66:11437"
+    - "http://172.31.220.66:11438"
+    - "http://172.31.220.66:11439"
+    - "http://172.31.220.66:11440"
+    - "http://172.31.220.66:11441"
+    - "http://172.31.220.66:11442"
+
+    # - "http://172.31.220.69:11435"
+    # - "http://172.31.220.69:11436"
+    # - "http://172.31.220.69:11437"
+    # - "http://172.31.220.69:11438"
+    # - "http://172.31.220.69:11439"
+    # - "http://172.31.220.69:11440"
+    # - "http://172.31.220.69:11441"
+    # - "http://172.31.220.69:11442"
+
+  model_provider: "Ollama"
+  reasoning: true
+  stream: false
+  seed: 42
+  num_ctx: 34000
+  temperature: 0
+
+# llm:
+#   model: "gpt-4o"
+#   api_key: "sk-KfgseAOy3hxsPmSgB36903DfA841406e9b47288f8bFc05Bd"
+#   base_url: "https://api.apiyi.com"
+#   # base_url: "https://api.csun.site"
+#   # api_key: "sk-OWLPeB1zJIiUw4tpvKO53e1LiovazisGY6K0BpDZhkq4AUlO"
+#   temperature: 0 # 设置0.1以确保结果更稳定
+#   timeout: 60
+#   model_provider: "OpenAI"
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "detailed"
+  file_path: "./logs/afa.log"
+  rotation: "10 MB"
+  retention: "7 days"
+  compression: "zip"
+
+# 特征提取配置
+feature_extraction:
+  spatial:
+    enable_lbp: true
+    enable_glcm: true
+    enable_edge: true
+
+  # 多模态特征配置
+  frequency:
+    enable_fft: true
+    enable_dct: true
+    enable_wavelet: true
+    wavelet_type: "db4"
+    wavelet_levels: 3
+
+  # 鲁棒性测试
+  noise_robustness:
+    enable: true
+    noise_types: ["gaussian", "salt_pepper"]
+    intensity_range: [0.01, 0.1]
+
+  # 执行图像语义特征模式
+  semantic_llm:
+    # model: "gpt-4o"
+    # api_key: "sk-KfgseAOy3hxsPmSgB36903DfA841406e9b47288f8bFc05Bd"
+    # base_url: "https://api.apiyi.com"
+    # # base_url: "https://api.csun.site"
+    # # api_key: "sk-OWLPeB1zJIiUw4tpvKO53e1LiovazisGY6K0BpDZhkq4AUlO"
+    # temperature: 0 # 设置0.1以确保结果更稳定
+    # timeout: 60
+    # model_provider: "OpenAI"
+    prompt_path: "/data2/yuyangxin/Agent/forensic_agent/configs/prompts/semantic_analysis.txt"
+
+
+datasets:
+  # test_paths: "/data2/yuyangxin/Agent/outputs/dataset_sampling/AIGCDetect-testset_AIGIBench_Chameleon_Community-Forensics-eval_WildRF_WIRA_GenImage-Val/merged_expert_cluster_analysis.csv"
+  # test_paths: "/data2/yuyangxin/Agent/outputs/dataset_sampling/AIGCDetect-testset_AIGIBench_Chameleon_Community-Forensics-eval_WildRF_WIRA_GenImage-Val/samples_by_label_with_clusters.csv"
+  # test_paths: "/data2/yuyangxin/Agent/outputs/dataset_sampling/AIGCDetect-testset_AIGIBench_Chameleon_Community-Forensics-eval_WildRF_WIRA_GenImage-Val/sample_by_label/test_dataset_['CLIP', 'CFA', 'SRM'].csv"
+  test_paths: "/data2/yuyangxin/Agent/outputs/x-fuse/test_WIRA_WIRF_.csv"
+  expert_models: 
+    - "DRCT"
+    - "SPAI"
+    - "RINE"
+    - "PatchShuffle"
+    
+
+# 工具
+tools:
+  ExpertAnalysis:
+    prompt_path: "./forensic_agent/configs/prompts/expert_analysis_prompt.txt"
+  ClusteringAnalysis:
+    prompt_path: "./forensic_agent/configs/prompts/cluster_analysis_prompt.txt"
+  SemanticAnalysis:
+    prompt_path: "./forensic_agent/configs/prompts/forensic_analysis_prompt.txt"
+
+# 模型画像配置
+profiles:
+  semantic_profiles: "/data2/yuyangxin/Agent/outputs/dataset_sampling/WildRF_WIRA/sample_by_all/semantic/semantic_profiles.json"
+  model_profiles: "./forensic_agent/configs/profiles/model_profiles.json"
+  clustering_performance_profiles: "/data2/yuyangxin/Agent/outputs/x-fuse/clustering_performance_profiles.json"
+  clustering_analysis_profiles: "/data2/yuyangxin/Agent/outputs/x-fuse/clustering_analysis_profiles.json"
+  calibration_profiles: "/data2/yuyangxin/Agent/outputs/x-fuse/calibration_profile_x-fuse.json"
