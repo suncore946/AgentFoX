@@ -3,7 +3,10 @@
 [English](README_EN.md)
 
 ### 📄 概述
-本仓库提供发表在 arXiv 上的论文 **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection** 的代码实现与数据集。
+本仓库提供 arXiv 论文 **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection** 的代码实现与数据集。
+
+- arXiv 摘要页：https://arxiv.org/abs/2603.23115
+- PDF：https://arxiv.org/pdf/2603.23115
 
 ### 📅 发布计划
 我们正在逐步整理并发布与项目相关的资源

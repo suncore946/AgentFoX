@@ -2,8 +2,8 @@
 
 <p align="center">
   <a href="./docs/README_ZH.md">中文</a> |
-  <a href="#">arXiv</a> |
-  <a href="#">Paper</a>
+  <a href="https://arxiv.org/abs/2603.23115">arXiv</a> |
+  <a href="https://arxiv.org/pdf/2603.23115">Paper</a>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 This repository provides the official code implementation and dataset for the paper:
 
 > **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection**
-> *Published on arXiv*
+> *arXiv:2603.23115*
 
 AgentFoX is a Large Language Model–driven forensic framework that redefines AI-Generated Image (AIGI) detection as a **dynamic, multi-phase analytical process**. Instead of returning a coarse binary label, it produces a **detailed, human-readable forensic report** that substantiates its verdict.
 
