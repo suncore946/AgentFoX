@@ -1,0 +1,9 @@
+You are a senior statistician and machine learning evaluation expert. Please create a model profile for the AIGC image expert detection model based on the provided clustering performance data.
+
+Please identify and explain the advantages and disadvantages of the "expert model" under different image feature clusters, and provide a final summary.
+
+Note:
+- Must use rigorous mathematical statistical methods and reproducible standards, avoiding subjective assumptions.
+- Do not mention sample proportion-related terms. The description should be from the perspective of which model should be adopted when given a single sample.
+- Conclusions should be related to forgery detection content, based on data to avoid subjective estimates.
+- Content should be specific, referring to the following response format: The XXX model has obvious advantages in cluster X under XXX features, because: XXX

@@ -1,0 +1,605 @@
+{
+  "overall_performance": {
+    "description": "In a non-clustered, the overall performance of models",
+    "performance": {
+      "DRCT": {
+        "f1_score": 0.8977,
+        "precision": 0.8977
+      },
+      "Patch_Shuffle": {
+        "f1_score": 0.9029,
+        "precision": 0.9032
+      },
+      "RINE": {
+        "f1_score": 0.9434,
+        "precision": 0.9434
+      },
+      "SPAI": {
+        "f1_score": 0.8537,
+        "precision": 0.8542
+      }
+    }
+  },
+  "cluster_CLIP": {
+    "clustering_name": "cluster_CLIP",
+    "clustering_description": {
+      "cluster_CLIP": "Extracts intermediate layer feature vectors from a CLIP vision encoder retrained on AIGC and authentic images. The model processes images through a Vision Transformer architecture, capturing the penultimate layer's hidden states as deep feature representations that encapsulate rich visual semantic information"
+    },
+    "performance": {
+      "cluster_0": {
+        "DRCT": {
+          "f1_score": 0.8769,
+          "precision": 0.8999
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9293,
+          "precision": 0.9458
+        },
+        "RINE": {
+          "f1_score": 0.9075,
+          "precision": 0.9331
+        },
+        "SPAI": {
+          "f1_score": 0.8749,
+          "precision": 0.9042
+        }
+      },
+      "cluster_1": {
+        "DRCT": {
+          "f1_score": 0.5158,
+          "precision": 0.9119
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.3954,
+          "precision": 0.6041
+        },
+        "RINE": {
+          "f1_score": 0.5788,
+          "precision": 0.9404
+        },
+        "SPAI": {
+          "f1_score": 0.3853,
+          "precision": 0.5873
+        }
+      },
+      "cluster_2": {
+        "DRCT": {
+          "f1_score": 0.9306,
+          "precision": 0.9669
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9527,
+          "precision": 0.9768
+        },
+        "RINE": {
+          "f1_score": 0.8739,
+          "precision": 0.9308
+        },
+        "SPAI": {
+          "f1_score": 0.8892,
+          "precision": 0.9441
+        }
+      },
+      "cluster_3": {
+        "DRCT": {
+          "f1_score": 0.5692,
+          "precision": 0.8548
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.5333,
+          "precision": 0.7787
+        },
+        "RINE": {
+          "f1_score": 0.6326,
+          "precision": 0.9056
+        },
+        "SPAI": {
+          "f1_score": 0.5087,
+          "precision": 0.7502
+        }
+      },
+      "cluster_4": {
+        "DRCT": {
+          "f1_score": 0.594,
+          "precision": 0.9501
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.6404,
+          "precision": 0.9716
+        },
+        "RINE": {
+          "f1_score": 0.7623,
+          "precision": 0.9894
+        },
+        "SPAI": {
+          "f1_score": 0.569,
+          "precision": 0.9461
+        }
+      },
+      "cluster_5": {
+        "DRCT": {
+          "f1_score": 0.7841,
+          "precision": 0.9321
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.8657,
+          "precision": 0.9572
+        },
+        "RINE": {
+          "f1_score": 0.8603,
+          "precision": 0.955
+        },
+        "SPAI": {
+          "f1_score": 0.7497,
+          "precision": 0.9061
+        }
+      },
+      "cluster_6": {
+        "DRCT": {
+          "f1_score": 0.7089,
+          "precision": 0.7712
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.7494,
+          "precision": 0.7959
+        },
+        "RINE": {
+          "f1_score": 0.9489,
+          "precision": 0.967
+        },
+        "SPAI": {
+          "f1_score": 0.6438,
+          "precision": 0.6881
+        }
+      },
+      "cluster_7": {
+        "DRCT": {
+          "f1_score": 0.8329,
+          "precision": 0.907
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9452,
+          "precision": 0.9734
+        },
+        "RINE": {
+          "f1_score": 0.9477,
+          "precision": 0.9765
+        },
+        "SPAI": {
+          "f1_score": 0.8701,
+          "precision": 0.9317
+        }
+      },
+      "cluster_8": {
+        "DRCT": {
+          "f1_score": 0.8654,
+          "precision": 0.9668
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9438,
+          "precision": 0.9832
+        },
+        "RINE": {
+          "f1_score": 0.8208,
+          "precision": 0.9303
+        },
+        "SPAI": {
+          "f1_score": 0.8212,
+          "precision": 0.9346
+        }
+      },
+      "cluster_9": {
+        "DRCT": {
+          "f1_score": 0.5249,
+          "precision": 0.6602
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.8645,
+          "precision": 0.963
+        },
+        "RINE": {
+          "f1_score": 0.6534,
+          "precision": 0.8394
+        },
+        "SPAI": {
+          "f1_score": 0.6253,
+          "precision": 0.8302
+        }
+      }
+    }
+  },
+  "cluster_CFA": {
+    "clustering_name": "cluster_CFA",
+    "clustering_description": {
+      "cluster_CFA": "Image features based on Color Filter Array interpolation artifacts. Detects CFA interpolation patterns by applying multiple filters (Laplacian, Prewitt, etc.) and extracts statistical features (mean, variance, skewness, kurtosis, zero-crossing rate), texture features (GLCM contrast, correlation, energy, homogeneity), block-wise features (statistics of block variance and mean), and periodicity features (FFT frequency domain analysis of 2x2 periodic patterns and energy distribution)"
+    },
+    "performance": {
+      "cluster_0": {
+        "DRCT": {
+          "f1_score": 0.8897,
+          "precision": 0.8923
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9558,
+          "precision": 0.9559
+        },
+        "RINE": {
+          "f1_score": 0.9124,
+          "precision": 0.9124
+        },
+        "SPAI": {
+          "f1_score": 0.868,
+          "precision": 0.8684
+        }
+      },
+      "cluster_1": {
+        "DRCT": {
+          "f1_score": 0.807,
+          "precision": 0.8339
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.7269,
+          "precision": 0.733
+        },
+        "RINE": {
+          "f1_score": 0.8862,
+          "precision": 0.9003
+        },
+        "SPAI": {
+          "f1_score": 0.6845,
+          "precision": 0.6979
+        }
+      },
+      "cluster_2": {
+        "DRCT": {
+          "f1_score": 0.9091,
+          "precision": 0.9169
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9689,
+          "precision": 0.9724
+        },
+        "RINE": {
+          "f1_score": 0.9637,
+          "precision": 0.9677
+        },
+        "SPAI": {
+          "f1_score": 0.9285,
+          "precision": 0.9356
+        }
+      },
+      "cluster_3": {
+        "DRCT": {
+          "f1_score": 0.9168,
+          "precision": 0.9344
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9289,
+          "precision": 0.9398
+        },
+        "RINE": {
+          "f1_score": 0.9589,
+          "precision": 0.9662
+        },
+        "SPAI": {
+          "f1_score": 0.925,
+          "precision": 0.9388
+        }
+      },
+      "cluster_4": {
+        "DRCT": {
+          "f1_score": 0.8733,
+          "precision": 0.8735
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9607,
+          "precision": 0.9616
+        },
+        "RINE": {
+          "f1_score": 0.9243,
+          "precision": 0.9262
+        },
+        "SPAI": {
+          "f1_score": 0.8726,
+          "precision": 0.8748
+        }
+      },
+      "cluster_5": {
+        "DRCT": {
+          "f1_score": 0.8106,
+          "precision": 0.8116
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.7368,
+          "precision": 0.7371
+        },
+        "RINE": {
+          "f1_score": 0.933,
+          "precision": 0.9353
+        },
+        "SPAI": {
+          "f1_score": 0.7163,
+          "precision": 0.7163
+        }
+      },
+      "cluster_6": {
+        "DRCT": {
+          "f1_score": 0.9641,
+          "precision": 0.9655
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9719,
+          "precision": 0.973
+        },
+        "RINE": {
+          "f1_score": 0.9861,
+          "precision": 0.9868
+        },
+        "SPAI": {
+          "f1_score": 0.9676,
+          "precision": 0.9691
+        }
+      },
+      "cluster_7": {
+        "DRCT": {
+          "f1_score": 0.8001,
+          "precision": 0.8512
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.8583,
+          "precision": 0.8751
+        },
+        "RINE": {
+          "f1_score": 0.8556,
+          "precision": 0.8775
+        },
+        "SPAI": {
+          "f1_score": 0.7609,
+          "precision": 0.7946
+        }
+      },
+      "cluster_8": {
+        "DRCT": {
+          "f1_score": 0.9363,
+          "precision": 0.9457
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9755,
+          "precision": 0.9797
+        },
+        "RINE": {
+          "f1_score": 0.9545,
+          "precision": 0.9626
+        },
+        "SPAI": {
+          "f1_score": 0.9304,
+          "precision": 0.9417
+        }
+      },
+      "cluster_9": {
+        "DRCT": {
+          "f1_score": 0.9162,
+          "precision": 0.9194
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9041,
+          "precision": 0.9069
+        },
+        "RINE": {
+          "f1_score": 0.9659,
+          "precision": 0.9676
+        },
+        "SPAI": {
+          "f1_score": 0.8876,
+          "precision": 0.8908
+        }
+      },
+      "cluster_10": {
+        "DRCT": {
+          "f1_score": 0.6706,
+          "precision": 0.8719
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.5516,
+          "precision": 0.7119
+        },
+        "RINE": {
+          "f1_score": 0.8779,
+          "precision": 0.9672
+        },
+        "SPAI": {
+          "f1_score": 0.4256,
+          "precision": 0.5264
+        }
+      }
+    }
+  },
+  "cluster_SRM": {
+    "clustering_name": "cluster_SRM",
+    "clustering_description": {
+      "cluster_SRM": "Applies Spatial Rich Model (SRM) filters to extract residual images through convolution operations, then computes Gray Level Co-occurrence Matrix (GLCM) on the residuals to derive texture statistics including contrast, correlation, energy, and homogeneity. These features capture subtle texture variations and are widely used in steganalysis and tampering detection"
+    },
+    "performance": {
+      "cluster_0": {
+        "DRCT": {
+          "f1_score": 0.8293,
+          "precision": 0.8298
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.8968,
+          "precision": 0.8985
+        },
+        "RINE": {
+          "f1_score": 0.9294,
+          "precision": 0.9301
+        },
+        "SPAI": {
+          "f1_score": 0.8395,
+          "precision": 0.8396
+        }
+      },
+      "cluster_1": {
+        "DRCT": {
+          "f1_score": 0.9456,
+          "precision": 0.948
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9242,
+          "precision": 0.9295
+        },
+        "RINE": {
+          "f1_score": 0.9691,
+          "precision": 0.9706
+        },
+        "SPAI": {
+          "f1_score": 0.8982,
+          "precision": 0.9038
+        }
+      },
+      "cluster_2": {
+        "DRCT": {
+          "f1_score": 0.9286,
+          "precision": 0.9307
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9633,
+          "precision": 0.9652
+        },
+        "RINE": {
+          "f1_score": 0.9623,
+          "precision": 0.964
+        },
+        "SPAI": {
+          "f1_score": 0.9168,
+          "precision": 0.9205
+        }
+      },
+      "cluster_3": {
+        "DRCT": {
+          "f1_score": 0.8976,
+          "precision": 0.8995
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9362,
+          "precision": 0.9405
+        },
+        "RINE": {
+          "f1_score": 0.9498,
+          "precision": 0.952
+        },
+        "SPAI": {
+          "f1_score": 0.8811,
+          "precision": 0.8859
+        }
+      },
+      "cluster_4": {
+        "DRCT": {
+          "f1_score": 0.9042,
+          "precision": 0.9049
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.7667,
+          "precision": 0.7694
+        },
+        "RINE": {
+          "f1_score": 0.9292,
+          "precision": 0.9296
+        },
+        "SPAI": {
+          "f1_score": 0.7499,
+          "precision": 0.7502
+        }
+      },
+      "cluster_5": {
+        "DRCT": {
+          "f1_score": 0.8294,
+          "precision": 0.8296
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.5481,
+          "precision": 0.5823
+        },
+        "RINE": {
+          "f1_score": 0.9409,
+          "precision": 0.9411
+        },
+        "SPAI": {
+          "f1_score": 0.6039,
+          "precision": 0.6246
+        }
+      },
+      "cluster_6": {
+        "DRCT": {
+          "f1_score": 0.8213,
+          "precision": 0.8494
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9399,
+          "precision": 0.943
+        },
+        "RINE": {
+          "f1_score": 0.9031,
+          "precision": 0.9085
+        },
+        "SPAI": {
+          "f1_score": 0.8211,
+          "precision": 0.8295
+        }
+      },
+      "cluster_7": {
+        "DRCT": {
+          "f1_score": 0.8472,
+          "precision": 0.8933
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.8976,
+          "precision": 0.9198
+        },
+        "RINE": {
+          "f1_score": 0.8791,
+          "precision": 0.9064
+        },
+        "SPAI": {
+          "f1_score": 0.7954,
+          "precision": 0.8274
+        }
+      },
+      "cluster_8": {
+        "DRCT": {
+          "f1_score": 0.9169,
+          "precision": 0.9177
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9375,
+          "precision": 0.9379
+        },
+        "RINE": {
+          "f1_score": 0.9704,
+          "precision": 0.9706
+        },
+        "SPAI": {
+          "f1_score": 0.908,
+          "precision": 0.9091
+        }
+      },
+      "cluster_9": {
+        "DRCT": {
+          "f1_score": 0.8126,
+          "precision": 0.8515
+        },
+        "Patch_Shuffle": {
+          "f1_score": 0.9388,
+          "precision": 0.9488
+        },
+        "RINE": {
+          "f1_score": 0.8514,
+          "precision": 0.871
+        },
+        "SPAI": {
+          "f1_score": 0.7875,
+          "precision": 0.8149
+        }
+      }
+    }
+  }
+}
