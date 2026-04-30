@@ -1,288 +1,200 @@
-# AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection
+# AgentFoX
 
-<p align="center">
-  <a href="./docs/README_ZH.md">中文</a> |
-  <a href="https://arxiv.org/abs/2603.23115">arXiv</a> |
-  <a href="https://arxiv.org/pdf/2603.23115">Paper</a>
-</p>
+Minimal open-source inference code for **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection**.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" />
-  <img src="https://img.shields.io/badge/LangGraph-ReAct_Agent-green.svg" />
-  <img src="https://img.shields.io/badge/LLM-Qwen3%20%7C%20GPT--4o-orange.svg" />
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
-</p>
+This release is scoped to the smallest runnable test path: a user provides images, a CSV with labels, and an LLM/VLM backend. It does not include private API keys, server IPs, absolute paths, image resources, generated profiles, training pipelines, annotation tools, or expert-model assets.
 
----
+[中文文档](resources/docs/README_ZH.md)
 
-## 📄 Overview
+## What Is Included
 
-This repository provides the official code implementation and dataset for the paper:
-
-> **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection**
-> *arXiv:2603.23115*
-
-AgentFoX is a Large Language Model–driven forensic framework that redefines AI-Generated Image (AIGI) detection as a **dynamic, multi-phase analytical process**. Instead of returning a coarse binary label, it produces a **detailed, human-readable forensic report** that substantiates its verdict.
-
----
-
-## 📅 Release Roadmap
-
-We are gradually organizing and releasing resources related to this project:
-
-- [ ] **TODO**: Release the **X-Fuse Dataset**.
-- [ ] **TODO**: Release **Verification Code** (evaluation scripts and pre-trained models).
-- [ ] **TODO**: Release **Quick Access / Inference Code** for rapid integration.
-
----
-
-## 📝 Introduction
-
-The increasing realism of AI-Generated Images (AIGI) has created an urgent need for forensic tools capable of reliably distinguishing synthetic content from authentic imagery. Existing detectors are typically tailored to specific forgery artifacts—such as frequency-domain patterns or semantic inconsistencies—leading to specialized performance and, at times, conflicting judgments.
-
-To address these limitations, we present **AgentFoX**, which employs a **quick-integration fusion mechanism** guided by a curated knowledge base comprising:
-- 📌 **Calibrated Expert Profiles** — per-model performance profiles with calibrated confidence
-- 📌 **Contextual Clustering Profiles** — cluster-aware context for adaptive fusion
-
-During inference, the agent:
-1. Begins with **high-level semantic assessment**
-2. Transitions to **fine-grained, context-aware synthesis** of signal-level expert evidence
-3. Resolves contradictions through **structured reasoning**
-4. Outputs a **human-readable forensic report** with an explicit verdict
-
-Beyond detection, this work introduces a **scalable agentic paradigm** that facilitates intelligent integration of future and evolving forensic tools.
-
----
-
-## 🏗️ System Architecture
-
-```
-AgentFoX
+```text
+AgentFoX/
+├── agent_pipeline.py
 ├── forensic_agent/
+│   ├── application_builder.py
+│   ├── configs/
+│   │   ├── config_minimal_test.yaml
+│   │   ├── agent_template.txt
+│   │   └── prompts/
+│   │       ├── reporter_prompt.txt
+│   │       └── semantic_analysis.txt
 │   ├── core/
-│   │   ├── forensic_agent.py        # LangGraph ReAct agent (main orchestrator)
-│   │   ├── forensic_llm.py          # Multi-LLM management (Ollama / OpenAI)
-│   │   ├── forensic_tools.py        # Auto-discovery tool registration system
-│   │   ├── forensic_reporter.py     # Final report generation node
-│   │   ├── forensic_template.py     # Agent prompt template builder
-│   │   └── agent_state.py           # Stage-based state machine (StageEnum)
-│   │
-│   ├── core/tools/
-│   │   ├── expert_analysis_tool.py  # Expert model result aggregation
-│   │   ├── expert_profiles_tool.py  # Expert calibration profile lookup
-│   │   ├── clustering_profiles_tool.py  # Cluster-context profile lookup
-│   │   └── expert_results_tool.py   # Raw expert prediction retrieval
-│   │
-│   ├── calibration/                 # Confidence calibration system
-│   │   ├── calibration_methods.py   # Temperature scaling, Platt scaling, etc.
-│   │   ├── calibration_system.py    # Calibration pipeline
-│   │   └── calibration_evaluator.py # ECE, reliability diagram evaluation
-│   │
-│   ├── processor/                   # Data processing modules
-│   │   ├── semantic_forgery_tracking_processor.py
-│   │   └── semantic_labeling_processor.py
-│   │
-│   ├── visualization/               # Result visualization
-│   │   ├── report_generator.py
-│   │   ├── heatmap_generator.py
-│   │   └── performance_visualizer.py
-│   │
-│   ├── manager/                     # Service managers
-│   │   ├── config_manager.py
-│   │   ├── datasets_manager.py
-│   │   ├── image_manager.py
-│   │   ├── profile_manager.py
-│   │   └── feature_manager.py
-│   │
-│   └── configs/
-│       ├── profiles/                # Expert & clustering profiles (JSON)
-│       └── prompts/                 # All agent/tool prompts (TXT)
-│
-├── agent_pipeline.py                # Main entry point (batch test / single analyze)
-├── app_gui.py                       # Gradio web UI
-├── calibration_profile_pipeline.py  # Build calibration profiles
-├── clustering_profile_pipeline.py   # Build clustering profiles
-└── model_profile_pipeline.py        # Build model performance profiles
+│   │   ├── forensic_agent.py
+│   │   ├── forensic_llm.py
+│   │   ├── forensic_reporter.py
+│   │   ├── forensic_tools.py
+│   │   └── tools/semantic_analysis_tool.py
+│   ├── expert_features/
+│   ├── manager/
+│   ├── processor/
+│   └── utils/
+├── docs/README_ZH.md
+├── requirements.txt
+└── tests/
 ```
 
----
+The default workflow runs semantic image analysis and asks the reporter to produce a final binary verdict:
 
-## 🔍 Multi-Stage Analysis Workflow
+- `0`: authentic camera-captured image
+- `1`: AI-generated or forged image
 
-AgentFoX follows a **stage-based reasoning pipeline** driven by a ReAct agent:
+Expert fusion, calibration, clustering profiles, training, labeling, GUI, generated resources, and private datasets are not part of this minimal release.
 
-| Stage | Description |
-|-------|-------------|
-| `INITIAL` | Image ingestion and setup |
-| `SEMANTIC_LEVEL` | High-level semantic plausibility check (VLM-based) |
-| `EXPERT_PROFILES` | Retrieve calibrated expert model performance profiles |
-| `EXPERT_RESULTS` | Collect raw predictions from all expert detectors |
-| `EXPERT_ANALYSIS` | Fuse and analyze expert evidence with cluster context |
-| `CLUSTERING_ANALYSIS` | Apply clustering profiles to resolve conflicting signals |
-| `FINALLY_REPORT` | Generate structured forensic report with final verdict |
+## Installation
 
-The agent uses `update stage to: <stage_name>` as a lightweight state-transition protocol, making the pipeline auditable and explainable.
-
----
-
-## 🧰 Expert Detectors Supported
-
-AgentFoX integrates multiple AIGI detection expert models as tools:
-
-| Model | Focus Area |
-|-------|-----------|
-| **DRCT** | Frequency & texture artifacts |
-| **RINE** | Noise inconsistency detection |
-| **SPAI** | Semantic-physical anomaly identification |
-| **Patch Shuffle** | Patch-level statistical analysis |
-
-Expert outputs are **probability-calibrated** via temperature scaling / Platt scaling before being passed to the agent.
-
----
-
-## 🚀 Quick Start
-
-### 1. Environment Setup
+Python 3.10+ is recommended.
 
 ```bash
-git clone https://github.com/your-repo/AgentFoX.git
+git clone <your-agentfox-repo-url>
 cd AgentFoX
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Key dependencies:**
+## Dataset CSV
 
-| Category | Libraries |
-|----------|-----------|
-| LLM / Agent | `langchain`, `langgraph`, `langchain-openai` |
-| Vision | `Pillow`, `opencv-python`, `scikit-image` |
-| ML | `torch`, `torchvision`, `timm`, `scikit-learn` |
-| Data | `pandas`, `numpy`, `faiss-cpu` |
-| UI | `gradio` |
-| Logging | `loguru`, `tqdm` |
+Prepare a CSV file such as `test.csv`:
 
-### 2. Configuration
+```csv
+image_path,gt_label,dataset_name
+images/real_001.jpg,0,my_dataset
+images/fake_001.png,1,my_dataset
+```
 
-Edit or create a YAML config (see `forensic_agent/configs/config_qwen3_32b_benchmark.yaml`):
+Required columns:
+
+- `image_path`: local image path or URL. Relative paths are resolved against `datasets.image_root` when configured; otherwise they are resolved against the CSV file directory.
+- `gt_label`: integer label. `0` means authentic image, `1` means AI-generated/forged image.
+
+Optional column:
+
+- `dataset_name`: dataset name for result bookkeeping. If omitted, the CSV filename stem is used.
+
+## LLM Credentials
+
+For OpenAI-compatible backends, set the API key through an environment variable:
+
+```bash
+export OPENAI_API_KEY="your_key_here"
+```
+
+Do not write API keys into `config_minimal_test.yaml`.
+
+For a local Ollama backend, set:
 
 ```yaml
-# Agent reasoning engine
-agent:
-  max_iterations: 40
-  open_calibration: true   # Enable calibration profiles
-  open_semantic: true      # Enable semantic analysis
-  open_expert: true        # Enable expert model analysis
-  open_clustering: true    # Enable clustering profiles
-  expert_models:
-    - "DRCT"
-    - "PatchShuffle"
-    - "SPAI"
-    - "RINE"
-
-# LLM backbone (Ollama local or OpenAI-compatible API)
 llm:
-  model: "qwen3:32b"
-  base_url:
-    - "http://localhost:11434"
-  model_provider: "Ollama"
-  temperature: 0
-  reasoning: true
+  model_provider: ollama
+  model: qwen2.5vl:7b
+  base_url: http://localhost:11434
+  support_vision: true
 ```
 
-### 3. Run Batch Evaluation
+## Minimal Run
+
+Edit `forensic_agent/configs/config_minimal_test.yaml` and set:
+
+```yaml
+datasets:
+  test_paths:
+    - /path/to/your/test.csv
+```
+
+Then run:
 
 ```bash
-# Batch test on a dataset
 python agent_pipeline.py \
-    --mode test \
-    --config_path forensic_agent/configs/config_qwen3_32b_benchmark.yaml
-
-# Compute metrics from results
-python agent_pipeline.py \
-    --mode metrics \
-    --config_path forensic_agent/configs/config_qwen3_32b_benchmark.yaml
-
-# Analyze a single image
-python agent_pipeline.py \
-    --mode analyze \
-    --config_path forensic_agent/configs/config_qwen3_32b_benchmark.yaml \
-    --image_path /path/to/image.jpg
-
-# Extract semantic features
-python agent_pipeline.py \
-    --mode semantic \
-    --config_path forensic_agent/configs/config_qwen3_32b_benchmark.yaml
+  --mode test \
+  --config_path forensic_agent/configs/config_minimal_test.yaml
 ```
 
-### 4. Launch Web UI (Gradio)
+Single-image analysis:
 
 ```bash
-python app_gui.py
-# Access at: http://0.0.0.0:7860
+python agent_pipeline.py \
+  --mode analyze \
+  --config_path forensic_agent/configs/config_minimal_test.yaml \
+  --image_path /path/to/image.jpg
 ```
 
-The web UI provides:
-- 🖼️ **Image upload** or gallery example selection
-- 🔴/🟢 **Visual verdict** (FAKE / REAL)
-- 🔗 **Process graph** — node-by-node agent reasoning visualization
-- 📝 **Forensic report** — human-readable analysis
-- 💬 **Chat detail** — full agent conversation trace
-- 📄 **Raw JSON** — structured output for downstream use
-
-### 5. Build Knowledge Base Profiles
-
-Before running the agent, pre-build the required profile files:
+Compute metrics from saved results:
 
 ```bash
-# Step 1: Build calibration profiles for expert models
-python calibration_profile_pipeline.py
-
-# Step 2: Build clustering profiles
-python clustering_profile_pipeline.py
-
-# Step 3: Build expert model performance profiles
-python model_profile_pipeline.py
+python agent_pipeline.py \
+  --mode only_metrics \
+  --config_path forensic_agent/configs/config_minimal_test.yaml
 ```
 
----
+Output is written to:
 
-## ⚙️ Run Modes
+```text
+outputs/agentfox_minimal/
+├── detail_output/
+└── final_output/
+```
 
-| Mode | Command Flag | Description |
-|------|-------------|-------------|
-| Batch Test | `--mode test` | Run AgentFoX on all images in the configured dataset |
-| Metrics | `--mode metrics` | Compute ACC / F1 / Precision / Recall from saved results |
-| Single Image | `--mode analyze` | Analyze one image and print the forensic report |
-| Semantic Extract | `--mode semantic` | Pre-extract semantic features (VLM-based) for all images |
-| Expert Extract | `--mode expert` | Pre-extract expert model predictions for all images |
+## Configuration Reference
 
----
+`agent.*`
 
-## 📂 X-Fuse Dataset
+- `max_iterations`: maximum LangGraph reasoning iterations.
+- `per_workflow_workers`: reserved for future local worker usage; minimal CLI runs serially.
+- `open_semantic`: enables the semantic analysis tool.
+- `open_expert`, `open_calibration`, `open_clustering`: disabled in the minimal release.
+- `agent_template`: path to the Agent system prompt.
+- `reporter.prompt_path`: path to the final-report audit prompt.
 
-The **X-Fuse** dataset is specifically designed for evaluating **explainable** AI-generated image detection, covering a rich variety of samples from multiple generative models.
+`llm.*`
 
-- **Download Link**: Coming soon (TODO)
-- **Data Structure**: Details will be updated upon release
+- `model_provider`: `openai` for OpenAI-compatible APIs or `ollama` for local Ollama.
+- `model`: chat/VLM model name.
+- `base_url`: API base URL. Keep private hosts out of committed config files.
+- `temperature`, `max_tokens`, `timeout`: generation settings.
+- `support_vision`: set `true` when the main model accepts image input.
 
----
+`datasets.*`
 
-## 📊 Supported Datasets for Evaluation
+- `test_paths`: one CSV path or a list of CSV paths.
+- `image_root`: optional root used to resolve relative `image_path` values.
+- `runtime_cache_dir`: optional directory for generated semantic cache; defaults to `.agentfox_cache` beside the first CSV.
 
-| Dataset | Description |
-|---------|-------------|
-| GenImage | Large-scale AIGI benchmark |
-| GenImage-Val | Validation split |
-| AIGCDetect-testset | Multi-source AI detection |
-| AIGIBench | Comprehensive AIGI benchmark |
-| Chameleon | Challenging adversarial samples |
-| Community-Forensics | Real-world community media |
-| WildRF / WIRA | In-the-wild realistic forgeries |
+`image_manager.*`
 
----
+- `max_width`, `max_height`: resize bounds for LLM image input.
+- `maintain_aspect_ratio`: preserve aspect ratio when resizing.
 
-## 📧 Contact
+`logging.*`
 
-If you have any questions regarding the code or dataset, please feel free to open an Issue or contact us via email:
+- `level`: log level.
+- `log_dir`, `file_name`: file log destination.
+- `rotation`, `retention`: Loguru file rotation settings.
 
-📮 **2453043007@mails.szu.edu.cn**
+`tools.SemanticAnalysis.prompt_path`
+
+- Prompt used by the semantic analysis processor.
+
+## Security And Data Boundaries
+
+This repository intentionally does not include:
+
+- API keys or tokens
+- private server IPs
+- personal absolute paths
+- image resources or datasets
+- generated semantic/profile/cache/output data
+- annotation, model training, or private expert-model pipelines
+
+End-to-end inference requires an external LLM/VLM service. The repository does not run a real networked LLM test unless you provide valid credentials or a local service.
+
+## Verification
+
+```bash
+python -m compileall agent_pipeline.py forensic_agent
+python agent_pipeline.py --help
+pytest
+```
+
+Before release, also run a secret/path scan for API-key prefixes, private IPs,
+personal absolute paths, and committed API-key fields.

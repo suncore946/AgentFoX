@@ -1,0 +1,272 @@
+# AgentFoX example configuration.
+# 中文: 本文件基于原始 benchmark 配置结构整理, 已移除 API key、私有 IP、个人绝对路径和资源数据路径。
+# English: This file follows the original benchmark configuration structure, with API keys,
+# private IPs, personal absolute paths, and resource-data paths removed.
+
+# 中文: Agent 推理配置, 控制状态机、工具开关、提示词和输出目录。
+# English: Agent reasoning settings controlling the state machine, tool switches, prompts, and output directory.
+agent:
+  # 中文: 单张图片最多允许的 Agent 推理迭代次数; 过小可能导致报告未完成, 过大可能造成长循环。
+  # English: Maximum agent reasoning iterations per image; too low may stop reports early, too high may allow long loops.
+  max_iterations: 40
+
+  # 中文: 是否启用校准 profile; 最小开源版默认关闭, 仅在补充 calibration 资产后开启。
+  # English: Whether to enable calibration profiles; keep false in the minimal release unless calibration assets are added.
+  open_calibration: false
+
+  # 中文: 是否启用语义分析工具; 最小 test 流程需要开启。
+  # English: Whether to enable semantic analysis; required for the minimal test workflow.
+  open_semantic: true
+
+  # 中文: 是否启用专家模型结果分析; 最小开源版不附带专家模型结果, 默认关闭。
+  # English: Whether to enable expert-model result analysis; disabled by default because minimal release ships no expert outputs.
+  open_expert: false
+
+  # 中文: 是否启用聚类上下文分析; 最小开源版不附带聚类 profile, 默认关闭。
+  # English: Whether to enable clustering-context analysis; disabled by default because minimal release ships no clustering profiles.
+  open_clustering: false
+
+  # 中文: Agent 主提示词路径; 可替换为自定义 ReAct/状态机提示词。
+  # English: Main agent prompt path; can be replaced with a custom ReAct/state-machine prompt.
+  agent_template: "./forensic_agent/configs/agent_template.txt"
+
+  # 中文: 最终报告器配置, 用于把对话历史整理成结构化结论。
+  # English: Final reporter settings used to convert conversation history into a structured verdict.
+  reporter:
+    # 中文: Reporter 审计提示词路径。
+    # English: Prompt path for the final reporter/auditor.
+    prompt_path: "./forensic_agent/configs/prompts/reporter_prompt.txt"
+
+  # 中文: 推理输出目录; detail_output 保存脱敏对话, final_output 保存最终 JSON。
+  # English: Inference output directory; detail_output stores redacted conversations and final_output stores final JSON.
+  save_dir: "./outputs/agent_results_example"
+
+# 中文: LLM/VLM 配置, 用作 Agent 推理引擎。
+# English: LLM/VLM configuration used as the agent reasoning engine.
+llm:
+  # 中文: 模型名称; Ollama 可使用本地模型名, OpenAI-compatible API 使用服务端模型名。
+  # English: Model name; use a local model name for Ollama or a provider model name for OpenAI-compatible APIs.
+  model: "your-vlm-model-name"
+
+  # 中文: 模型服务地址; 示例使用本机地址, 请不要提交私有服务器 IP。
+  # English: Model service URL; this example uses localhost, do not commit private server IPs.
+  base_url:
+    - "http://localhost:11434"
+
+  # 中文: 模型服务提供方; 支持 "Ollama" 或 OpenAI-compatible 的 "openai"。
+  # English: Model provider; supports "Ollama" or OpenAI-compatible "openai".
+  model_provider: "Ollama"
+
+  # 中文: 是否启用流式输出; 批量 test 建议关闭。
+  # English: Whether to stream model output; false is recommended for batch tests.
+  stream: false
+
+  # 中文: 是否请求模型返回 reasoning 字段; 取决于模型服务是否支持。
+  # English: Whether to request a reasoning field; depends on model-service support.
+  reasoning: false
+
+  # 中文: 随机种子; 用于支持 seed 的后端提高复现性。
+  # English: Random seed for backends that support seeded generation.
+  seed: 42
+
+  # 中文: 上下文长度; Ollama 等本地后端可使用该值控制上下文窗口。
+  # English: Context length; local backends such as Ollama may use this to control the context window.
+  num_ctx: 32000
+
+  # 中文: 采样温度; 取证推理通常使用 0 以提升稳定性。
+  # English: Sampling temperature; forensic inference usually uses 0 for stability.
+  temperature: 0
+
+  # 中文: 主模型是否支持图片输入; 使用 VLM 时应为 true。
+  # English: Whether the main model supports image input; set true for VLMs.
+  support_vision: true
+
+# 中文: OpenAI-compatible API 示例; 不要把真实 key 写进 YAML, 使用 OPENAI_API_KEY 环境变量。
+# English: OpenAI-compatible API example; do not write real keys into YAML, use OPENAI_API_KEY instead.
+# llm:
+#   model: "gpt-4o-mini"
+#   base_url: "https://api.openai.com/v1"
+#   model_provider: "openai"
+#   temperature: 0
+#   timeout: 60
+#   support_vision: true
+
+# 中文: 日志配置。
+# English: Logging configuration.
+logging:
+  # 中文: 日志级别, 常用 INFO; 调试时可改为 DEBUG。
+  # English: Log level, usually INFO; set DEBUG for troubleshooting.
+  level: "INFO"
+
+  # 中文: 日志格式, detailed 会包含模块、函数和行号。
+  # English: Log format; detailed includes module, function, and line number.
+  format: "detailed"
+
+  # 中文: 日志文件路径; 设为 null 可关闭文件日志。
+  # English: Log file path; set to null to disable file logging.
+  file_path: "./logs/agentfox_example.log"
+
+  # 中文: 单个日志文件轮转大小。
+  # English: Rotation size for one log file.
+  rotation: "10 MB"
+
+  # 中文: 日志保留时间。
+  # English: Log retention period.
+  retention: "7 days"
+
+  # 中文: 轮转日志压缩格式。
+  # English: Compression format for rotated logs.
+  compression: "zip"
+
+# 中文: 轻量图像特征提取配置, 这些特征只作为语义分析提示上下文。
+# English: Lightweight image-feature extraction settings; these features are only prompt context for semantic analysis.
+feature_extraction:
+  # 中文: 空间域统计特征。
+  # English: Spatial-domain statistical features.
+  spatial:
+    # 中文: 是否提取 LBP 纹理特征。
+    # English: Whether to extract LBP texture features.
+    enable_lbp: true
+
+    # 中文: 是否提取 GLCM 灰度共生矩阵特征。
+    # English: Whether to extract GLCM co-occurrence features.
+    enable_glcm: true
+
+    # 中文: 是否提取边缘密度和方向统计。
+    # English: Whether to extract edge-density and edge-direction statistics.
+    enable_edge: true
+
+  # 中文: 频域统计特征。
+  # English: Frequency-domain statistical features.
+  frequency:
+    # 中文: 是否提取 FFT 功率谱统计。
+    # English: Whether to extract FFT power-spectrum statistics.
+    enable_fft: true
+
+    # 中文: 是否提取 DCT 块统计。
+    # English: Whether to extract DCT block statistics.
+    enable_dct: true
+
+    # 中文: 是否提取小波特征; 需要安装 PyWavelets, 最小开源版可保持 false。
+    # English: Whether to extract wavelet features; requires PyWavelets, can remain false in the minimal release.
+    enable_wavelet: false
+
+    # 中文: 小波类型; 仅 enable_wavelet=true 时使用。
+    # English: Wavelet type; used only when enable_wavelet=true.
+    wavelet_type: "db4"
+
+    # 中文: 小波分解层数; 仅 enable_wavelet=true 时使用。
+    # English: Wavelet decomposition levels; used only when enable_wavelet=true.
+    wavelet_levels: 3
+
+    # 中文: DCT 块大小。
+    # English: DCT block size.
+    dct_block_size: 8
+
+    # 中文: 大图最多采样的 DCT 块数, 用于限制运行成本。
+    # English: Maximum sampled DCT blocks for large images to bound runtime cost.
+    max_dct_blocks: 512
+
+    # 中文: FFT 径向功率谱分桶数量。
+    # English: Number of radial bins for FFT power profile.
+    radial_bins: 16
+
+  # 中文: 噪声鲁棒性测试配置; 最小开源版默认不使用。
+  # English: Noise-robustness test settings; not used by default in the minimal release.
+  noise_robustness:
+    # 中文: 是否启用噪声鲁棒性测试。
+    # English: Whether to enable noise-robustness testing.
+    enable: false
+
+    # 中文: 噪声类型列表。
+    # English: List of noise types.
+    noise_types: ["gaussian", "salt_pepper"]
+
+    # 中文: 噪声强度范围。
+    # English: Noise intensity range.
+    intensity_range: [0.01, 0.1]
+
+  # 中文: 语义特征/VLM 提示配置。
+  # English: Semantic feature/VLM prompt configuration.
+  semantic_llm:
+    # 中文: 语义分析提示词路径。
+    # English: Semantic-analysis prompt path.
+    prompt_path: "./forensic_agent/configs/prompts/semantic_analysis.txt"
+
+# 中文: 数据集配置。
+# English: Dataset configuration.
+datasets:
+  # 中文: 测试 CSV 路径; CSV 至少包含 image_path 和 gt_label, dataset_name 可选。
+  # English: Test CSV path; CSV must contain image_path and gt_label, dataset_name is optional.
+  test_paths: "./examples/test.csv"
+
+  # 中文: 可选图片根目录; 相对 image_path 会优先基于该目录解析。
+  # English: Optional image root; relative image_path values resolve against this directory first.
+  image_root:
+
+  # 中文: 可选运行时缓存目录; 留空时默认使用第一个 CSV 同级 .agentfox_cache。
+  # English: Optional runtime cache directory; empty means .agentfox_cache beside the first CSV.
+  runtime_cache_dir:
+
+# 中文: 工具配置; 最小开源版默认只使用 SemanticAnalysis。
+# English: Tool configuration; the minimal release uses SemanticAnalysis by default.
+tools:
+  # 中文: 专家分析工具配置; 仅高级版/自行补充工具后使用。
+  # English: Expert-analysis tool settings; only for advanced versions or user-added tools.
+  ExpertAnalysis:
+    # 中文: 专家分析提示词路径占位。
+    # English: Placeholder path for expert-analysis prompt.
+    prompt_path: "./forensic_agent/configs/prompts/expert_analysis_prompt.txt"
+
+  # 中文: 聚类分析工具配置; 仅高级版/自行补充 profile 后使用。
+  # English: Clustering-analysis tool settings; only for advanced versions or user-added profiles.
+  ClusteringAnalysis:
+    # 中文: 聚类分析提示词路径占位。
+    # English: Placeholder path for clustering-analysis prompt.
+    prompt_path: "./forensic_agent/configs/prompts/cluster_analysis_prompt.txt"
+
+  # 中文: 语义分析工具配置。
+  # English: Semantic-analysis tool settings.
+  SemanticAnalysis:
+    # 中文: 语义/取证分析提示词路径; 最小开源版建议使用 semantic_analysis.txt。
+    # English: Semantic/forensic analysis prompt path; semantic_analysis.txt is recommended for the minimal release.
+    prompt_path: "./forensic_agent/configs/prompts/semantic_analysis.txt"
+
+# 中文: 模型画像/profile 配置; 最小开源版不附带这些资产, 以下路径都是占位示例。
+# English: Model/profile configuration; the minimal release does not ship these assets, paths below are placeholders.
+profiles:
+  # 中文: 专家模型性能画像 JSON 路径。
+  # English: Expert-model performance profile JSON path.
+  model_profiles: "./profiles/model_profiles.json"
+
+  # 中文: 聚类性能画像 JSON 路径。
+  # English: Clustering performance profile JSON path.
+  clustering_performance_profiles: "./profiles/clustering_performance_profiles.json"
+
+  # 中文: 聚类分析画像 JSON 路径。
+  # English: Clustering analysis profile JSON path.
+  clustering_analysis_profiles: "./profiles/clustering_analysis_profiles.json"
+
+  # 中文: 校准 profile JSON 路径。
+  # English: Calibration profile JSON path.
+  calibration_profiles: "./profiles/calibration_profiles.json"
+
+  # 中文: 语义分析缓存/profile JSON 路径; 留空可使用运行时缓存。
+  # English: Semantic-analysis cache/profile JSON path; leave empty to use runtime cache.
+  semantic_profiles:
+
+  # 中文: 专家分析 CSV 路径; 仅高级工具需要。
+  # English: Expert-analysis CSV path; required only by advanced tools.
+  expert_analysis: "./profiles/expert_analysis.csv"
+
+  # 中文: 图片数据根目录占位; 请替换为自己的数据目录, 不要提交个人绝对路径。
+  # English: Image data root placeholder; replace with your own data directory and do not commit personal absolute paths.
+  base_dir: "./data"
+
+  # 中文: 专家模型名称列表; 仅高级 expert 工具使用。
+  # English: Expert model name list; used only by advanced expert tools.
+  expert_models:
+    - "DRCT"
+    - "PatchShuffle"
+    - "SPAI"
+    - "RINE"

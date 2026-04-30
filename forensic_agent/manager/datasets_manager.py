@@ -1,134 +1,203 @@
+"""Minimal CSV dataset loader for AgentFoX inference.
+
+中文说明: 开源版只要求用户提供包含 image_path 和 gt_label 的 CSV, 不依赖私有数据库。
+English: The open-source version only requires a CSV with image_path and
+gt_label, and does not depend on private databases.
+"""
+
+from __future__ import annotations
+
+from functools import lru_cache
 from pathlib import Path
-from typing import List
-from loguru import logger
+from typing import Iterable
+
 import pandas as pd
-from ..data_operation.dataset_loader import load_project_data
+from loguru import logger
 
 
 class DatasetsManager:
+    """Load and normalize test data.
+
+    中文说明: 该类把一个或多个测试 CSV 合并为统一 DataFrame, 并处理相对图片路径。
+    English: This class merges one or more test CSV files into a single
+    DataFrame and resolves relative image paths.
+    """
+
+    REQUIRED_COLUMNS = {"image_path", "gt_label"}
+
     def __init__(self, config: dict):
-        """
-        初始化 ForensicDatasets 类
-
-        Args:
-            config (dict): 配置字典，包含 test_paths 或 dataset_names/db_dir
-        """
-        assert isinstance(config, dict), "配置必须是一个字典"
-        # 要么包含 test_paths，要么同时包含 dataset_names 和 db_dir
-        assert "test_paths" in config or (
-            "dataset_names" in config and "db_dir" in config
-        ), "配置中必须包含 'test_paths' 或同时包含 'dataset_names' 和 'db_dir'"
+        if not isinstance(config, dict):
+            raise TypeError("datasets config must be a dictionary.")
         self.config = config
-        self.expert_models: List = config.get("expert_models", ["DRCT", "SPAI", "RINE", "PatchShuffle"])
-        self.test_paths: str = config.get("test_paths", None)
+        self.test_paths = self._normalize_test_paths(config.get("test_paths"))
+        if not self.test_paths:
+            raise ValueError("datasets.test_paths is required in the open-source minimal runtime.")
 
-        # 扩展实现数据库的相关内容
-        self._detail_data, self._clustering_data = self.load_data(
-            test_paths=self.test_paths,
-            model_names=self.expert_models,
-            dataset_names=config.get("dataset_names", None),
-            db_dir=config.get("db_dir", None),
-        )
+        self.image_root = Path(config["image_root"]).expanduser() if config.get("image_root") else None
+        self.runtime_cache_dir = self._resolve_runtime_cache_dir()
+        self.runtime_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        self._detail_data = self._load_test_data()
+        self._clustering_data = pd.DataFrame({"image_path": self._detail_data["image_path"].drop_duplicates()})
+        self._val_data = pd.DataFrame()
 
     @property
     def detail_data(self) -> pd.DataFrame:
-        # 将_detail_data根据image_path和model_name进行去重
-        info: pd.DataFrame = self._detail_data.drop_duplicates(subset=["image_path", "model_name"])
-        # 如果model_name列下有名为vllm的, 去掉vllm
-        return info[info["model_name"] != "vllm"]
+        """Return per-image rows for batch inference.
+
+        中文说明: 最小 test 只按 image_path 去重, 不要求 model_name/expert 结果。
+        English: Minimal test deduplicates by image_path and does not require
+        model_name or expert predictions.
+        """
+        return self._detail_data.drop_duplicates(subset=["image_path"]).reset_index(drop=True)
 
     @property
     def clustering_data(self) -> pd.DataFrame:
-        info: pd.DataFrame = self._clustering_data.drop_duplicates(subset=["image_path"])
-        return info
+        """Return placeholder clustering data.
+
+        中文说明: clustering 在最小配置中关闭, 这里保留空壳以兼容运行时接口。
+        English: Clustering is disabled in minimal config; this placeholder
+        keeps the runtime interface stable.
+        """
+        return self._clustering_data.copy()
+
+    @property
+    def val_data(self) -> pd.DataFrame:
+        """Return validation data placeholder.
+
+        中文说明: 最小推理不需要验证集。
+        English: Minimal inference does not need a validation set.
+        """
+        return self._val_data.copy()
+
+    @property
+    def primary_test_path(self) -> Path:
+        """Return the first configured CSV path.
+
+        中文说明: 运行时缓存默认放在第一个 CSV 的同级目录。
+        English: Runtime cache defaults to the parent directory of the first
+        CSV file.
+        """
+        return Path(self.test_paths[0])
 
     @staticmethod
-    def load_data(test_paths, model_names, dataset_names=None, db_dir=None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def _normalize_test_paths(test_paths) -> list[str]:
+        """Normalize datasets.test_paths to a non-empty list.
+
+        中文说明: 同时支持字符串和字符串列表。
+        English: Both a single string and a list of strings are supported.
         """
-        统一的数据加载方法
+        if isinstance(test_paths, (str, Path)):
+            return [str(test_paths)]
+        if isinstance(test_paths, Iterable):
+            return [str(path) for path in test_paths if str(path).strip()]
+        return []
 
-        Args:
-            config: 配置字典，可包含 test_paths 或 dataset_names/db_dir
+    def _resolve_runtime_cache_dir(self) -> Path:
+        """Choose where runtime semantic caches are stored.
 
-        Returns:
-            tuple: (detail_data, clustering_data)
+        中文说明: 用户可配置 runtime_cache_dir; 否则使用 CSV 同级目录下的 .agentfox_cache。
+        English: Users may configure runtime_cache_dir; otherwise `.agentfox_cache`
+        beside the CSV is used.
         """
-        if test_paths:
-            # 从测试文件加载数据
-            test_data: pd.DataFrame = pd.read_csv(test_paths)
-            if test_data.empty:
-                logger.warning(f"测试数据文件为空: {test_paths}")
-                return pd.DataFrame(), pd.DataFrame()
+        if self.config.get("runtime_cache_dir"):
+            return Path(self.config["runtime_cache_dir"]).expanduser()
+        return self.primary_test_path.expanduser().parent / ".agentfox_cache"
 
-            if model_names:
-                test_data = test_data[test_data["model_name"].isin(model_names)]
-            if test_data.empty:
-                raise ValueError(f"测试数据中不包含指定的模型: {model_names}")
+    @staticmethod
+    @lru_cache(maxsize=65536)
+    def _normalize_image_path_str(path_str: str) -> str:
+        """Normalize a local path without requiring it to exist.
 
-            # 确保image_path列存在
-            if "image_path" not in test_data.columns:
-                logger.error("测试数据缺少必需的image_path列")
-                raise ValueError("Missing required column: image_path")
-
-            # 聚类数据
-            ignore_cols = ["cluster_LaplacianVar&EdgeDensity&HF_LF_Ratio"]
-            cluster_cols = [col for col in test_data.columns if col.startswith("cluster_") and col not in ignore_cols]
-
-            # 详细数据
-            detail_cols = [col for col in test_data.columns if not col.startswith("cluster_")]
-
-            return test_data[detail_cols], test_data[["image_path"] + cluster_cols]
-        else:
-            # 从项目数据库加载数据
-            detail_data, db_loader = load_project_data(
-                dataset_names=dataset_names,
-                db_dir=db_dir,
-                model_names=model_names,
-            )
-            clustering_data = db_loader.db_manager.load_clustering_results(dataset_names=dataset_names)
-            return detail_data, clustering_data
-
-    def save_detail_data(self, data: pd.DataFrame, save_name):
-        if self.test_paths:
-            target_path = Path(self.test_paths).parent / f"{save_name}.csv"
-            # 如果目标文件已存在，则先备份
-            if target_path.exists():
-                backup_path = target_path.with_suffix(target_path.suffix + ".backup")
-                target_path.replace(backup_path)
-                logger.info(f"已备份旧文件到 {backup_path}")
-            data.to_csv(target_path, index=False)
-            logger.info(f"详细数据已保存到 {target_path}")
-            self._detail_data = data
-        else:
-            raise NotImplementedError("不是在待测试数据模式下，暂不支持保存详细数据。")
-
-    def filtration(self, image_paths: List[str]) -> pd.DataFrame:
+        中文说明: 不强制图片存在, 让配置检查和单元测试可以先验证 CSV 解析。
+        English: The image does not need to exist during path normalization, so
+        config checks and unit tests can validate CSV parsing first.
         """
-        根据给定的图像路径列表过滤详细数据
+        if "://" in path_str:
+            return path_str
+        return Path(path_str).expanduser().resolve(strict=False).as_posix()
 
-        Args:
-            image_paths (List[str]): 图像路径列表
+    @staticmethod
+    def normalize_image_path(image_path) -> str:
+        """Normalize an arbitrary image path value.
 
-        Returns:
-            pd.DataFrame: 过滤后的详细数据
+        中文说明: 空值返回空字符串, URL 原样保留。
+        English: Empty values become an empty string, and URLs are preserved.
         """
-        logger.info(f"正在根据提供的图像路径过滤数据，共 {len(image_paths)} 张图像。")
-        self._detail_data = self.detail_data[self.detail_data["image_path"].isin(image_paths)]
-        self._clustering_data = self.clustering_data[self.clustering_data["image_path"].isin(image_paths)]
-        logger.info(f"过滤后剩余 {len(self._detail_data)} 条详细数据记录。")
+        if image_path is None:
+            return ""
+        try:
+            if pd.isna(image_path):
+                return ""
+        except Exception:
+            pass
+        path_str = str(image_path).strip()
+        if not path_str:
+            return ""
+        return DatasetsManager._normalize_image_path_str(path_str)
 
-    def get_image_and_label(self) -> List[str]:
-        """
-        获取当前详细数据中的所有图像路径
+    @staticmethod
+    def candidate_image_paths(image_path) -> list[str]:
+        """Return raw and normalized path candidates.
 
-        Returns:
-            List[str]: 图像路径列表
+        中文说明: profile/cache 查询时同时尝试原始路径和规范化路径。
+        English: Profile/cache lookups try both the raw path and normalized path.
         """
-        # 要image_path列和gt_label列, 转为下属dict
-        # {"image_path": {"gt_label":0/1}}
-        ret: pd.DataFrame = self.detail_data[["image_path", "gt_label"]].drop_duplicates().set_index("image_path")
-        # 转为字典形式返回, key是image_path, value是{"gt_label":0/1}
-        ret = ret["gt_label"].to_dict()
-        for k, v in ret.items():
-            ret[k] = {"gt_label": v}
-        return ret
+        raw = str(image_path).strip() if image_path is not None else ""
+        normalized = DatasetsManager.normalize_image_path(raw)
+        return [path for path in dict.fromkeys([raw, normalized]) if path]
+
+    def _resolve_image_path(self, raw_path: str, csv_path: Path) -> str:
+        """Resolve one CSV image_path entry.
+
+        中文说明: 相对路径优先基于 datasets.image_root, 否则基于 CSV 所在目录。
+        English: Relative paths are resolved against datasets.image_root first,
+        otherwise against the CSV parent directory.
+        """
+        raw_path = str(raw_path).strip()
+        if "://" in raw_path:
+            return raw_path
+        path = Path(raw_path).expanduser()
+        if path.is_absolute():
+            return self.normalize_image_path(path)
+        base_dir = self.image_root or csv_path.parent
+        return self.normalize_image_path(base_dir / path)
+
+    def _load_test_data(self) -> pd.DataFrame:
+        """Load and merge configured test CSV files.
+
+        中文说明: 缺少必需列会立即报错, 防止后续 Agent 运行时才失败。
+        English: Missing required columns fail fast before the agent starts.
+        """
+        frames: list[pd.DataFrame] = []
+        for raw_csv_path in self.test_paths:
+            csv_path = Path(raw_csv_path).expanduser()
+            if not csv_path.exists():
+                raise FileNotFoundError(f"Test CSV not found: {csv_path}")
+            data = pd.read_csv(csv_path)
+            missing = self.REQUIRED_COLUMNS - set(data.columns)
+            if missing:
+                raise ValueError(f"Missing required column(s) in {csv_path}: {sorted(missing)}")
+            if data.empty:
+                logger.warning(f"Test CSV is empty: {csv_path}")
+                continue
+
+            data = data.copy()
+            data["image_path"] = data["image_path"].map(lambda value: self._resolve_image_path(value, csv_path))
+            data["gt_label"] = pd.to_numeric(data["gt_label"], errors="raise").astype(int)
+            if "dataset_name" not in data.columns:
+                data["dataset_name"] = csv_path.stem
+            frames.append(data[["image_path", "gt_label", "dataset_name"]])
+
+        if not frames:
+            raise ValueError("No valid rows were loaded from datasets.test_paths.")
+        return pd.concat(frames, ignore_index=True).drop_duplicates(subset=["image_path"], keep="last")
+
+    def get_image_and_label(self) -> dict[str, dict[str, int]]:
+        """Return labels keyed by normalized image path.
+
+        中文说明: 保留该接口是为了兼容 Agent 工具层的状态读取。
+        English: This interface is kept for compatibility with the agent tool layer.
+        """
+        labels = self.detail_data[["image_path", "gt_label"]].set_index("image_path")["gt_label"].to_dict()
+        return {path: {"gt_label": int(label)} for path, label in labels.items()}

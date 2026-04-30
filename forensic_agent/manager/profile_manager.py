@@ -1,282 +1,128 @@
-# if self.target_models:
-#     tmp = {}
-#     if "overall_performance" in cluster_profiles:
-#         for performance in cluster_profiles["overall_performance"]["performance"]:
-#             if performance in self.target_models:
-#                 tmp[performance] = cluster_profiles["overall_performance"]["performance"][performance]
-#         cluster_profiles["overall_performance"]["performance"] = tmp
+"""Runtime semantic profile cache.
 
-from collections import defaultdict
+中文说明: 最小开源版不附带实验 profile JSON, 只在运行时缓存语义分析结果。
+English: The minimal open-source release does not ship experiment profile JSON;
+it only caches semantic analysis results at runtime.
+"""
+
+from __future__ import annotations
+
 import json
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Any, Optional
 from pathlib import Path
+from typing import Any
+
 from loguru import logger
-import pandas as pd
 
 from .base_manager import BaseManager
-from ..core.core_exceptions import ConfigurationError
-
-
-@dataclass
-class DecisionRecommendation:
-    """决策推荐"""
-
-    primary: str
-    secondary: str
-
-
-@dataclass
-class DecisionScenario:
-    """决策场景"""
-
-    scenario: str
-    environment_keywords: List[str]
-    aigc_focus: List[str]
-    recommendations: DecisionRecommendation
-    justification: str
+from .datasets_manager import DatasetsManager
 
 
 class ProfileManager(BaseManager):
-    """画像管理器"""
+    """Manage runtime semantic profiles.
 
-    def __init__(self, models_config: dict):
-        """
-        初始化模型画像管理器
+    中文说明: semantic_profiles 可选; 未配置时会自动写到测试 CSV 同级缓存目录。
+    English: semantic_profiles is optional; when omitted, results are written to
+    the cache directory beside the test CSV.
+    """
 
-        Args:
-            models_config: 模型配置字典
-        """
-        self.config = models_config
+    def __init__(self, models_config: dict | None):
+        self.config = models_config or {}
         self.logger = logger
-        self.target_models = self.config.get("expert_models", None)
+        self.semantic_profiles_path = self._resolve_optional_path(self.config.get("semantic_profiles"))
+        self._semantic_profiles: dict[str, Any] = self._load_semantic_profiles()
 
-        self._decision_scenarios: List[DecisionScenario] = []
+    @staticmethod
+    def _resolve_optional_path(path_value: str | Path | None) -> Path | None:
+        """Resolve an optional path.
 
-        # 从配置获取画像文件路径
-        default_profiles_path = Path(__file__).parent.parent / "configs" / "model_profiles.json"
-        self.model_profiles_path = Path(models_config.get("model_profiles", default_profiles_path))
-        self.clustering_performance_profiles_path = Path(models_config["clustering_performance_profiles"])
-        self.clustering_analysis_profiles_path = Path(models_config["clustering_analysis_profiles"])
-        self.semantic_profiles_path = self.config.get("semantic_profiles", None)
-        self.expert_analysis_path = self.config.get("expert_analysis", None)
-
-        if self.semantic_profiles_path:
-            self.semantic_profiles_path = Path(self.semantic_profiles_path)
-        self.calibration_profiles_path = Path(self.config.get("calibration_profiles", ""))
-
-        self._clustering_performance = self._load_clustering_profiles(self.clustering_performance_profiles_path)
-        self._clustering_analysis = self._load_clustering_profiles(self.clustering_analysis_profiles_path)
-        self._model_profiles = self._load_model_profiles()
-        self._semantic_profiles = self._load_semantic_profiles()
-        self._calibration_profiles = self._load_calibration_profiles()
-        self._expert_analysis = self._load_expert_analysis()
+        中文说明: 空配置保留为 None, 由 ensure_profile_paths 根据数据集补齐。
+        English: Empty values remain None and are later filled by
+        ensure_profile_paths based on the dataset.
+        """
+        if not path_value:
+            return None
+        return Path(path_value).expanduser()
 
     @property
-    def calibration_profiles(self) -> Dict[str, Any]:
-        """校准画像数据"""
-        target_models = set(self.target_models or [])
+    def semantic_profiles(self) -> dict[str, Any]:
+        """Return loaded semantic profile cache.
 
-        def should_include(model_name: str) -> bool:
-            return not target_models or model_name in target_models
-
-        ece = {
-            model_name: ece_data.get("ece_bootstrap_ci", {})
-            for model_name, ece_data in self._calibration_profiles.get("calibrations_data", {}).items()
-            if should_include(model_name)
-        }
-
-        analysis = self._calibration_profiles.get("calibrations_analysis", {})
-
-        quality = {
-            model_name: quality_data
-            for model_name, quality_data in self._calibration_profiles.get("calibrations_quality", {}).items()
-            if should_include(model_name)
-        }
-
-        return {
-            "ece_bootstrap_ci": ece,
-            "quality": quality,
-            "analysis": analysis,
-        }
-
-    @property
-    def semantic_profiles(self) -> Dict[str, Any]:
-        """语义画像数据"""
+        中文说明: 返回内存缓存, 调用方不要直接修改。
+        English: Returns the in-memory cache; callers should not mutate it directly.
+        """
         return self._semantic_profiles
 
-    @property
-    def expert_analysis(self) -> pd.DataFrame:
-        """专家分析数据"""
-        return self._expert_analysis
+    def ensure_profile_paths(self, datasets_manager: DatasetsManager | None = None, kind: str | None = None) -> None:
+        """Ensure the runtime semantic cache path exists.
 
-    def get_model_profiles(self, model_names) -> Dict[str, Dict]:
-        """所有模型画像"""
-        if isinstance(model_names, str):
-            model_names = [model_names]
+        中文说明: kind 参数保留为兼容接口, 最小版只支持 semantic。
+        English: The kind argument is kept for interface compatibility; the
+        minimal version only supports semantic profiles.
+        """
+        if self.semantic_profiles_path is None and datasets_manager is not None:
+            self.semantic_profiles_path = datasets_manager.runtime_cache_dir / "semantic_profiles.json"
+        if kind in {None, "semantic"}:
+            self._semantic_profiles = self._load_semantic_profiles()
 
-        if "calibration_note" in model_names:
-            model_names.remove("calibration_note")
+    def _load_semantic_profiles(self) -> dict[str, Any]:
+        """Load cached semantic profiles if present.
 
-        if self.target_models:
-            assert all(
-                name in self.target_models for name in model_names
-            ), f"请求的模型画像 {model_names} 不在目标模型列表 {self.target_models} 中"
-        # 根据model_names列表返回对应的画像, 如果不存在则返回空字典
-        # ret = {
-        #     "model_profiles": {name: self._model_profiles.get(name, {}) for name in model_names},
-        #     "model_evaluation": self._model_profiles.get("model_evaluation", {}),
-        # }
-        # return ret
-        return {name: self._model_profiles.get(name, {}) for name in model_names}
-
-    def get_clustering_overall_performance(self) -> Dict[str, Dict]:
-        return self._clustering_performance["overall_performance"]["performance"]
-
-    def get_clustering_analysis(self, cluster_names: Dict[str, List[int]]) -> Dict[str, Dict]:
-        """集群画像配置"""
-        ret = defaultdict(dict)
-        for cluster_name, indices in cluster_names.items():
-            if cluster_name.lower() not in self._clustering_analysis:
-                self.logger.debug(f"集群 '{cluster_name}' 的画像数据不存在")
-                continue
-            cluster_data = self._clustering_analysis[cluster_name.lower()]
-
-            # 如果indices不是可迭代对象, 则转为列表
-            if not isinstance(indices, (list, tuple)):
-                indices = [indices]
-
-            for index in indices:
-                # 简化索引名称生成逻辑
-                if isinstance(index, int):
-                    name = f"cluster_{index}"
-                elif isinstance(index, str) and "_" in index:
-                    name = f"cluster_{index.split('_')[-1]}"
-                else:
-                    # 处理其他情况
-                    name = f"cluster_{str(index)}"
-
-                profile_data = cluster_data.get("cluster_profile", {}).get(name, None)
-                ret[cluster_name][name] = profile_data
-                # clustering_analysis_data = cluster_data.get("comprehensive_analysis", None)
-                # if clustering_analysis_data is None or profile_data is None:
-                #     raise ConfigurationError(f"集群 '{cluster_name}' 中索引 '{name}' 的综合分析数据或画像数据不存在")
-                # ret[cluster_name]["clustering_analysis"] = clustering_analysis_data
-            ret[cluster_name]["overall_analysis"] = self._clustering_analysis["overall_analysis"]["clustering_analysis"][cluster_name]
-        return dict(ret)
-
-    def get_clustering_performance(self, cluster_names: Dict[str, List[int]]) -> Dict[str, Dict]:
-        """集群画像配置"""
-        ret = defaultdict(dict)
-        for cluster_name, indices in cluster_names.items():
-            if cluster_name.lower() not in self._clustering_performance:
-                self.logger.debug(f"集群 '{cluster_name}' 的画像数据不存在")
-                continue
-            cluster_data = self._clustering_performance[cluster_name.lower()]
-            # 如果indices不是可迭代对象, 则转为列表
-            if not isinstance(indices, (list, tuple)):
-                indices = [indices]
-
-            for index in indices:
-                # 简化索引名称生成逻辑
-                if isinstance(index, int):
-                    name = f"cluster_{index}"
-                elif isinstance(index, str) and "_" in index:
-                    name = f"cluster_{index.split('_')[-1]}"
-                else:
-                    # 处理其他情况
-                    name = f"cluster_{str(index)}"
-
-                ranking_info = cluster_data["forensic_expert_cluster_performance"][name]
-                if self.target_models:
-                    # 基于self.target_models过滤排名信息
-                    ranking_info = {model: performance for model, performance in ranking_info.items() if model in self.target_models}
-                ret[cluster_name] = {
-                    "cluster_name": name,
-                    "Cluster_rounding_experts_performance_ranking": ranking_info,
-                    # "clustering_quality_metrics": cluster_data.get("clustering_quality_metrics", {}),
-                }
-
-        return ret
-
-    def _load_clustering_profiles(self, target_path) -> Dict[str, Dict]:
-        """获取集群画像配置"""
-        ret = {}
-        with open(target_path, "r", encoding="utf-8") as f:
-            cluster_profiles = json.load(f)
-        # 所有的key转为小写，方便后续查询
-        for clustering_name, profiles in cluster_profiles.items():
-            # 对profiles进行处理, 将list转换为dict, key为cluster_name
-            if isinstance(profiles, list):
-                profile_dict = {}
-                for profile in profiles:
-                    cluster_name = profile.get("cluster_name")
-                    if cluster_name:
-                        profile_dict[cluster_name] = profile
-                ret[clustering_name.lower()] = profile_dict
-            elif isinstance(profiles, dict):
-                # 已经是dict，直接存储
-                ret[clustering_name.lower()] = profiles
-            else:
-                self.logger.warning(f"未知的profiles类型: {type(profiles)}，跳过 {clustering_name}")
-        return ret
-
-    def _load_model_profiles(self) -> Dict[str, Dict]:
-        """加载模型画像数据"""
-        ret = {}
-        with open(self.model_profiles_path, "r", encoding="utf-8") as f:
-            data: dict = json.load(f)
-        # 基于self.target_models过滤模型画像
-        if self.target_models:
-            data["profiles"] = [p for p in data.get("profiles", []) if p.get("model") in self.target_models]
-        # 解析模型画像
-        for profile_data in data.get("profiles", []):
-            model_name = profile_data.pop("model", None)
-            ret[model_name] = profile_data
-        ret["model_evaluation"] = data.get("model_evaluation", {})
-        return ret
-
-    def _load_semantic_profiles(self) -> Dict[str, Any]:
-        """加载语义画像数据"""
+        中文说明: 缓存文件不存在是正常情况, 首次运行会按需生成。
+        English: A missing cache file is normal; the first run generates entries
+        on demand.
+        """
         if self.semantic_profiles_path and self.semantic_profiles_path.exists():
             with open(self.semantic_profiles_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data
-        self.logger.warning(f"语义画像文件不存在: {self.semantic_profiles_path}, 跳过加载语义画像")
+            return data if isinstance(data, dict) else {}
         return {}
 
-    def _load_calibration_profiles(self) -> Dict[str, Any]:
-        """加载校准画像数据"""
-        if not self.calibration_profiles_path.exists():
-            self.logger.warning(f"校准画像文件不存在: {self.calibration_profiles_path}, 跳过加载校准画像")
-            return {}
-        with open(self.calibration_profiles_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
+    @staticmethod
+    def _is_valid_semantic_profile(profile: Any) -> bool:
+        """Validate the semantic profile shape.
 
-    def _load_expert_analysis(self) -> pd.DataFrame:
-        """加载专家分析数据"""
-        if not self.expert_analysis_path or not Path(self.expert_analysis_path).exists():
-            self.logger.warning(f"专家分析文件不存在: {self.expert_analysis_path}, 跳过加载专家分析")
-            return pd.DataFrame()
-        df = pd.read_csv(self.expert_analysis_path)
-        return df
+        中文说明: 只接受 reporter 和 semantic tool 需要的三个核心字段。
+        English: Only the three fields required by the reporter and semantic
+        tool are accepted.
+        """
+        return isinstance(profile, dict) and {"observations", "detected_anomalies", "pred_label"}.issubset(profile)
 
-    def _parse_decision_scenario(self, data: Dict[str, Any]) -> DecisionScenario:
-        """解析决策场景数据"""
-        recommendations_data = data.get("recommendations", {})
-        recommendations = DecisionRecommendation(
-            primary=recommendations_data.get("primary", ""),
-            secondary=recommendations_data.get("secondary", ""),
-        )
+    def get_semantic_profile(self, image_path: str) -> dict[str, Any]:
+        """Return the cached semantic profile for an image.
 
-        return DecisionScenario(
-            scenario=data.get("scenario", ""),
-            environment_keywords=data.get("environment_keywords", []),
-            aigc_focus=data.get("AIGC_focus", []),
-            recommendations=recommendations,
-            justification=data.get("justification", ""),
-        )
+        中文说明: 同时尝试原始路径和规范化路径, 便于兼容不同 CSV 写法。
+        English: Both raw and normalized path candidates are tried to support
+        different CSV path styles.
+        """
+        for candidate in DatasetsManager.candidate_image_paths(image_path):
+            profile = self._semantic_profiles.get(candidate)
+            if self._is_valid_semantic_profile(profile):
+                return profile
+        return {}
 
-    def run(self, *args, **kwargs):
-        return super().run(*args, **kwargs)
+    def save_runtime_semantic_profile(
+        self,
+        image_path: str,
+        semantic_profile: dict[str, Any],
+        datasets_manager: DatasetsManager | None = None,
+    ) -> None:
+        """Persist one semantic profile.
+
+        中文说明: 写入前会再次加载缓存, 避免同一批次重复覆盖其他样本结果。
+        English: The cache is reloaded before writing so a batch run does not
+        overwrite results from other samples.
+        """
+        if not self._is_valid_semantic_profile(semantic_profile):
+            self.logger.warning(f"Invalid semantic profile skipped for image: {image_path}")
+            return
+        self.ensure_profile_paths(datasets_manager=datasets_manager, kind="semantic")
+        if self.semantic_profiles_path is None:
+            return
+
+        key = DatasetsManager.normalize_image_path(image_path)
+        self._semantic_profiles[key] = semantic_profile
+        self.semantic_profiles_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self.semantic_profiles_path.with_suffix(self.semantic_profiles_path.suffix + ".tmp")
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(self._semantic_profiles, f, ensure_ascii=False, indent=2)
+        temp_path.replace(self.semantic_profiles_path)

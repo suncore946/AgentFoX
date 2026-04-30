@@ -1,7 +1,12 @@
-# -*- coding: utf-8 -*-
+"""Semantic forgery tracking processor.
+
+中文说明: 该处理器把图像、轻量特征和提示词发送给 VLM, 并要求返回结构化语义鉴伪结果。
+English: This processor sends an image, lightweight features, and prompt to a
+VLM, then requests a structured semantic forensic result.
+"""
+
 import hashlib
 from pathlib import Path
-from typing import Any
 from enum import Enum
 import json
 from typing import Any, Dict
@@ -15,12 +20,24 @@ from ..utils.custom_json_encoder import CustomJsonEncoder
 
 
 class ForensicTracesModel(BaseModel):
+    """Pydantic schema for semantic forensic output.
+
+    中文说明: pred_label 遵循 0=真实图像, 1=AI 生成/伪造图像。
+    English: pred_label follows 0=authentic image and 1=AI-generated/forged
+    image.
+    """
+
     observations: str = Field(..., description="Brief, objective description of key scene elements and cues used.")
     detected_anomalies: str = Field(..., description="Detailed description of detected anomalies or inconsistencies.")
     limitations: str = Field(..., description="Note any factors that reduce reliability (resolution, occlusion, ambiguity).")
     pred_label: int = Field(..., description="1 indicates the AI generate Image and 0 indicates the natural Image.")
 
     def to_json(self, **json_kwargs) -> str:
+        """Serialize result as JSON.
+
+        中文说明: 保留中文内容, 并兼容 Enum 值。
+        English: Keeps Chinese text and supports Enum values.
+        """
         data = self.model_dump()
         kwargs = {"ensure_ascii": False}
         kwargs.update(json_kwargs)
@@ -28,6 +45,12 @@ class ForensicTracesModel(BaseModel):
 
 
 class ForensicTracesPrompt(BaseParser):
+    """Prompt parser bound to ForensicTracesModel.
+
+    中文说明: BaseParser 负责格式说明和解析重试。
+    English: BaseParser handles format instructions and parse retries.
+    """
+
     def __init__(self, llm: BaseLanguageModel, store: Dict[str, Any] = None, prompt_path: str = None):
         if prompt_path is None:
             prompt_path = self.__class__.__name__
@@ -35,7 +58,13 @@ class ForensicTracesPrompt(BaseParser):
 
 
 class SemanticForgeryTrackingProcessor(BaseProcessor):
-    # 支持的图片后缀
+    """Run VLM-based semantic forgery analysis.
+
+    中文说明: 最小开源版只支持 natural 图像类型, 不依赖额外私有资源。
+    English: The minimal open-source release supports only the natural image
+    type and does not depend on extra private resources.
+    """
+
     USER_PROMPT = """
     Please analyze this image, focusing on AIGC detection clues and synthetic artifacts. 
     {IMAGE_FEATURES}
@@ -46,7 +75,12 @@ class SemanticForgeryTrackingProcessor(BaseProcessor):
     PROCESS_NAME = "Forensic_Traces"
 
     def __init__(self, config: dict = {}, store=None, image_type="natural", prompt_path: str = None, forensic_llm=None):
-        """初始化图像分析器"""
+        """Initialize the semantic analyzer.
+
+        中文说明: forensic_llm 通常复用主 LLM/VLM 实例, 避免重复配置密钥。
+        English: forensic_llm usually reuses the main LLM/VLM instance to avoid
+        duplicate credential configuration.
+        """
         super().__init__(config, self.PROCESS_NAME, llm=forensic_llm)
         self.store = store if store is not None else {}
         if image_type == "natural":
@@ -55,7 +89,12 @@ class SemanticForgeryTrackingProcessor(BaseProcessor):
             raise ValueError(f"Unsupported image type: {image_type}. Supported types are: natural.")
 
     def process_file(self, image_path: Path, image_base64: None, image_format, image_features, *args, **kwargs) -> Any:
-        """执行图像分析"""
+        """Analyze one image.
+
+        中文说明: session_id 用图片路径或 base64 生成 hash, 保证同一图片的重试历史稳定。
+        English: session_id is hashed from image path or base64 so retry history
+        is stable for the same image.
+        """
         if image_path is not None:
             image_path = Path(image_path)
             session_id = hashlib.sha256(image_path.as_posix().encode()).hexdigest()

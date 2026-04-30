@@ -1,0 +1,63 @@
+# AgentFoX minimal test configuration.
+# 中文说明: 该模板不包含 API key、服务器 IP、个人绝对路径或资源路径。
+# English: This template contains no API key, server IP, personal absolute path,
+# or resource path.
+
+target_dir: ./outputs/agentfox_minimal
+
+agent:
+  max_iterations: 20
+  per_workflow_workers: 1
+  open_semantic: true
+  open_expert: false
+  open_calibration: false
+  open_clustering: false
+  agent_template: forensic_agent/configs/agent_template.txt
+  reporter:
+    prompt_path: forensic_agent/configs/prompts/reporter_prompt.txt
+
+llm:
+  model_provider: openai
+  model: gpt-4o-mini
+  base_url: https://api.openai.com/v1
+  temperature: 0
+  max_tokens: 2048
+  timeout: 60
+  support_vision: true
+
+datasets:
+  test_paths:
+    - ./examples/test.csv
+  image_root:
+  runtime_cache_dir:
+
+image_manager:
+  max_width: 768
+  max_height: 768
+  maintain_aspect_ratio: true
+
+logging:
+  level: INFO
+  log_dir: ./logs
+  file_name: agentfox.log
+  rotation: 10 MB
+  retention: 7 days
+
+tools:
+  SemanticAnalysis:
+    prompt_path: forensic_agent/configs/prompts/semantic_analysis.txt
+
+feature_extraction:
+  spatial:
+    enable_lbp: true
+    enable_glcm: true
+    enable_edge: true
+  frequency:
+    enable_fft: true
+    enable_dct: true
+    enable_wavelet: false
+    wavelet_type: db4
+    wavelet_levels: 3
+    dct_block_size: 8
+    max_dct_blocks: 512
+    radial_bins: 16

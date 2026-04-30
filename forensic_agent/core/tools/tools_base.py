@@ -1,25 +1,39 @@
+"""Base classes for AgentFoX tools.
+
+中文说明: 所有工具都实现 name/description/execute, 由 ForensicTools 自动适配到 LangChain。
+English: Every tool implements name/description/execute and is adapted to
+LangChain by ForensicTools.
+"""
+
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from loguru import logger
+
 from .schema import BaseSchema
 
-def skip_auto_register(cls):
-    """
-    类装饰器：标记该类在自动发现工具时跳过注册
 
-    Usage:
-        @skip_auto_register
-        class MyTestTool(ForensicToolBase):
-            pass
+def skip_auto_register(cls):
+    """Mark a tool class as excluded from discovery.
+
+    中文说明: 当前最小版很少需要, 但保留给测试或未来扩展使用。
+    English: Rarely needed in the minimal release, but kept for tests and future
+    extensions.
     """
     cls._skip_auto_register = True
     return cls
 
 
 class ToolsBase(ABC):
-    """取证工具抽象基类"""
+    """Abstract base class for forensic tools.
 
-    _skip_auto_register = False  # 默认不跳过注册
+    中文说明: args_schema 默认从 Agent state 注入 image_path。
+    English: args_schema injects image_path from agent state by default.
+    """
+
+    _skip_auto_register = False
     args_schema = BaseSchema
 
     def __init__(self, config: Optional[Dict[str, Any]] = None, *args, **kwargs):
@@ -29,24 +43,28 @@ class ToolsBase(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        """工具名称（必须唯一）"""
-        pass
+        """Unique tool name.
+
+        中文说明: 该名称会出现在 Agent 可调用工具列表里。
+        English: This name appears in the agent's callable tool list.
+        """
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def description(self) -> str:
-        """工具描述，包括参数说明"""
-        pass
+        """Tool description shown to the LLM.
+
+        中文说明: 描述应明确工具用途和返回内容。
+        English: The description should state the tool purpose and return shape.
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def execute(self, *args, **kwargs: Any):
-        """执行工具 - 模板方法模式。封装验证、日志和错误处理。
+        """Run the tool.
 
-        Args:
-            *args: 位置参数（传递给 run 和 validate_input）。
-            **kwargs: 命名参数（传递给 run 和 validate_input）。
-
-        Returns:
-            Dict[str, Any]: 执行结果，包括 tool, tool_result, execution_time, timestamp 等。
+        中文说明: 子类负责参数验证、核心逻辑和错误处理。
+        English: Subclasses handle validation, core logic, and error handling.
         """
-        pass
+        raise NotImplementedError

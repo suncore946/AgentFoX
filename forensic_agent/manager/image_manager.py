@@ -1,3 +1,10 @@
+"""Image loading and encoding helpers.
+
+中文说明: ImageManager 只处理用户提供的本地图片或 URL, 不包含默认资源路径。
+English: ImageManager handles user-provided local images or URLs only and does
+not contain bundled resource paths.
+"""
+
 import base64
 from io import BytesIO
 from pathlib import Path
@@ -13,55 +20,61 @@ from .base_manager import BaseManager
 
 
 class ImageManager(BaseManager):
+    """Load, resize, and encode images for LLM input.
+
+    中文说明: 这里不会缓存图片内容, 每次调用按需读取并返回内存对象。
+    English: Image content is not cached here; each call reads on demand and
+    returns in-memory objects.
+    """
 
     def __init__(self, config: dict):
+        """Initialize image limits.
+
+        中文说明: max_width/max_height 只用于工具提示中的压缩视图, 原图文件不会被改写。
+        English: max_width/max_height only affect the compressed view sent to
+        tools; source image files are never modified.
         """
-        初始化ImageProcessor类。
-        """
+        config = config or {}
         self.max_width = config.get("max_width", 128)
         self.max_height = config.get("max_height", 128)
-        self.font_path = config.get("font_path", "./resource/front/MSYH.TTC")
+        self.font_path = config.get("font_path")
         self.font_size = config.get("font_size", 40)
-        # 新增变量：是否等比缩放
         self.maintain_aspect_ratio = config.get("maintain_aspect_ratio", True)
 
     def reduce_image(self, image, target_width=None, target_height=None):
-        # 获取原始图像的宽度和高度
+        """Resize an image within configured bounds.
+
+        中文说明: 默认等比缩放, 避免改变取证目标的几何比例。
+        English: Aspect ratio is preserved by default to avoid distorting
+        forensic geometry cues.
+        """
         original_width, original_height = image.size
 
-        # 确定目标尺寸：优先使用传入的参数，其次使用实例默认值
         max_width = target_width if target_width is not None else self.max_width
         max_height = target_height if target_height is not None else self.max_height
 
         if max_width is None and max_height is None:
             return image, 1
 
-        # 非等比缩放
         if not self.maintain_aspect_ratio:
             new_width = max_width or original_width
             new_height = max_height or original_height
             width_ratio = new_width / original_width
             height_ratio = new_height / original_height
             resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            # 返回宽、高缩放比例
             return resized_image, (width_ratio, height_ratio)
 
-        # 等比缩放：如果原始图像已经符合要求，无需缩放
         if (max_width is None or original_width <= max_width) and (max_height is None or original_height <= max_height):
             return image, 1
 
-        # 计算宽度和高度的缩放比例
         width_ratio = max_width / original_width if max_width is not None else float("inf")
         height_ratio = max_height / original_height if max_height is not None else float("inf")
 
-        # 使用较小的比例进行缩放，保证宽度和高度都不超过最大值
         scale_ratio = min(width_ratio, height_ratio)
 
-        # 计算新的宽度和高度
         new_width = int(original_width * scale_ratio)
         new_height = int(original_height * scale_ratio)
 
-        # 使用LANCZOS进行高质量缩放
         resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
         return resized_image, scale_ratio
@@ -74,6 +87,12 @@ class ImageManager(BaseManager):
         target_width=None,
         target_height=None,
     ):
+        """Return base64, transformed image, and format.
+
+        中文说明: LLM/VLM 输入需要 data URL, 因此这里统一保留图片格式并编码。
+        English: LLM/VLM input needs data URLs, so this preserves image format
+        and performs encoding in one place.
+        """
         if isinstance(src_image, str) or isinstance(src_image, Path):
             loaded_image = self.load_image(src_image)[0]
         elif isinstance(src_image, np.ndarray):
@@ -83,7 +102,7 @@ class ImageManager(BaseManager):
 
         format_info = loaded_image.format
         if format_info is None:
-            raise ValueError("无法识别图像格式，请确保输入的图像具有有效的格式信息。")
+            format_info = "PNG"
 
         if is_resize:
             trans_image, _ = self.reduce_image(loaded_image, target_width, target_height)
@@ -92,7 +111,6 @@ class ImageManager(BaseManager):
             trans_image = loaded_image
 
         if is_center_crop and target_width and target_height:
-            # 使用 ImageOps.fit 进行中心裁剪
             trans_image = ImageOps.fit(trans_image, (target_width, target_height), method=Image.Resampling.LANCZOS)
             logger.debug(f"Center cropped image to: {trans_image.size}")
 
@@ -103,20 +121,24 @@ class ImageManager(BaseManager):
         return trans_base64, trans_image, format_info
 
     def base64_to_image(self, b64_str: str) -> Image.Image:
+        """Decode base64 into a PIL Image.
+
+        中文说明: 支持带 data URL 前缀的字符串。
+        English: Supports strings with a data URL prefix.
         """
-        将 Base64 字符串解码为 PIL Image
-        """
-        b64_str = b64_str.split(",")[-1]  # 去掉前缀部分
+        b64_str = b64_str.split(",")[-1]
         data = base64.b64decode(b64_str)
         return Image.open(BytesIO(data))
 
     def load_image(self, image_file: Path, image_type="RGB"):
-        """
-        加载并预处理图片
+        """Load one image from disk or URL.
+
+        中文说明: 本地图片用 PIL 直接打开以保留 format 信息; URL 图片会转为 RGB。
+        English: Local images are opened directly to preserve format metadata;
+        URL images are converted to RGB.
         """
         image_file = Path(image_file)
         if self.is_url(str(image_file)):
-            # 将图片下载到本地, 后进行处理
             src_image = Image.open(requests.get(image_file, stream=True).raw).convert(image_type)
         else:
             src_image = Image.open(image_file)
@@ -124,34 +146,39 @@ class ImageManager(BaseManager):
         return src_image, trans_image, scale_ratio
 
     def process_mask(self, src_mask, target_mask, scale_ratio):
+        """Combine two masks.
+
+        中文说明: 最小 test 流程不使用该方法, 保留给未来分割类扩展。
+        English: The minimal test path does not use this method; it is kept for
+        future segmentation-style extensions.
+        """
         def read_mask(mask):
             if isinstance(mask, (str, Path)):
                 return self.load_image(mask)[0]
             return mask
 
-        # 读取mask图像
         src_mask_img = read_mask(src_mask)
         target_mask_img = read_mask(target_mask)
 
-        # 确保图像大小相同
         if src_mask_img.shape != target_mask_img.shape:
             raise ValueError("Source and target masks must have the same dimensions.")
 
-        # 合并target_mask和target_mask_img, 要求相同的像素保留, 不同的像素取大值
         combined_mask = np.maximum(src_mask_img, target_mask_img)
 
-        # 如果需要缩放比例，可以在此处应用缩放
         if scale_ratio != 1.0:
             new_size = (int(combined_mask.shape[1] * scale_ratio), int(combined_mask.shape[0] * scale_ratio))
             combined_mask = cv2.resize(combined_mask, new_size, interpolation=cv2.INTER_NEAREST)
 
-        # 转为PIL图像
         combined_mask = Image.fromarray(combined_mask)
         return combined_mask
 
     @staticmethod
     def is_url(path: str):
-        """判断路径是否为 URL"""
+        """Return whether a path string is a URL.
+
+        中文说明: URL 图片不会按本地路径解析。
+        English: URL images are not resolved as local paths.
+        """
         try:
             result = urlparse(path)
             return all([result.scheme, result.netloc])
@@ -160,36 +187,32 @@ class ImageManager(BaseManager):
 
     @staticmethod
     def combine_images(src_img, mask_img):
-        # mask_img是灰度图像, src_img是RGB图像
-        # mask_img中为白色区域的保留src_img内容,黑色区域的去除src_img内容
+        """Apply a binary mask to an image.
+
+        中文说明: 白色区域保留, 黑色区域透明。
+        English: White areas are kept and black areas become transparent.
+        """
         src_img = src_img.convert("RGBA")
         mask_img = mask_img.convert("L")
 
-        # 创建一个新的图像，白色区域的alpha值为255，黑色区域的alpha值为0
         mask_rgba = Image.new("L", mask_img.size)
         mask_rgba.putdata([255 if pixel == 255 else 0 for pixel in mask_img.getdata()])
 
-        # 使用mask_rgba作为掩码合成src_img和透明背景
         combined_image = Image.composite(src_img, Image.new("RGBA", src_img.size, (0, 0, 0, 0)), mask_rgba)
 
         return combined_image
 
     @staticmethod
     def get_dataset(dataset_dir: Path):
-        """
-        获取文件夹下的所有图片文件及其对应的掩码文件
+        """List common image files in a directory.
 
-        Args:
-            dataset_dir (Path): 数据集目录路径
-
-        Returns:
-            list: 包含[图像文件路径, 掩码文件路径]对的列表
+        中文说明: 该工具只做文件枚举, 不读取图片内容。
+        English: This helper only enumerates files and does not read image
+        content.
         """
         dataset_dir = Path(dataset_dir)
-        # 常见的图像文件扩展名
         image_extensions = [".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff"]
 
-        # 收集所有图像文件（包括大写后缀）
         image_files = []
         for ext in image_extensions:
             image_files.extend(dataset_dir.glob(f"*{ext}"))
@@ -198,8 +221,10 @@ class ImageManager(BaseManager):
 
     @staticmethod
     def download_image(url: str, save_path: Path):
-        """
-        下载图片并保存到指定路径
+        """Download an image to a user-specified path.
+
+        中文说明: 不在默认流程中调用, 避免隐式联网。
+        English: Not called in the default flow, avoiding implicit network use.
         """
         response = requests.get(url)
         if response.status_code == 200:

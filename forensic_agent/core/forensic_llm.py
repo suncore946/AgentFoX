@@ -1,94 +1,119 @@
+"""LLM factory for AgentFoX.
+
+中文说明: 只保留 OpenAI-compatible 与 Ollama 两类常见推理后端, 不内置私有地址或密钥。
+English: Only OpenAI-compatible and Ollama backends are kept, with no private
+hosts or keys embedded.
+"""
+
+from __future__ import annotations
+
+import os
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, List, Union
-from langchain_ollama import ChatOllama
-from loguru import logger
+from typing import Dict, List
+
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
+from loguru import logger
+
 from ..utils import get_base_url
 
 
 class ForensicLLM:
-    def __init__(self, config: Union[Dict, List[Dict]]):
-        self._llm_instances: List[BaseChatModel] = []
-        target_hosts = config.pop("base_url")
-        self.support_vision = config.pop("support_vision", False)
-        if not isinstance(target_hosts, list):
-            target_hosts = [target_hosts]
+    """Create one or more chat model instances.
 
-        if len(target_hosts) == 0:
-            raise ValueError("At least one target_host must be specified in base_url")
-        elif len(target_hosts) == 1:
-            self._llm_instances.append(self._init_llm({**config, "base_url": target_hosts[0]}))
+    中文说明: base_url 可以是字符串或列表; 列表会创建多个 workflow。
+    English: base_url may be a string or list; a list creates multiple workflows.
+    """
+
+    def __init__(self, config: Dict):
+        if not isinstance(config, dict):
+            raise TypeError("llm config must be a dictionary.")
+        config_copy = dict(config)
+        target_hosts = config_copy.pop("base_url", None)
+        if not target_hosts:
+            raise ValueError("llm.base_url is required.")
+        self.support_vision = bool(config_copy.pop("support_vision", False))
+        hosts = target_hosts if isinstance(target_hosts, list) else [target_hosts]
+        if not hosts:
+            raise ValueError("At least one llm.base_url must be configured.")
+
+        self._llm_instances: List[BaseChatModel] = []
+        if len(hosts) == 1:
+            self._llm_instances.append(self._init_llm({**config_copy, "base_url": hosts[0]}))
         else:
-            # 并行初始化 LLM 实例，初始化完成后线程池自动关闭
-            with ThreadPoolExecutor(max_workers=len(target_hosts)) as executor:
-                # 为每个 host 构建独立的配置副本，避免并发修改同一 dict
-                futures = [executor.submit(self._init_llm, {**config, "base_url": host}) for host in target_hosts]
-                # 保持与 target_hosts 相同的顺序收集结果
-                for fut in futures:
-                    self._llm_instances.append(fut.result())
+            with ThreadPoolExecutor(max_workers=len(hosts)) as executor:
+                futures = [executor.submit(self._init_llm, {**config_copy, "base_url": host}) for host in hosts]
+                self._llm_instances = [future.result() for future in futures]
 
     @property
     def llm_num(self) -> int:
+        """Return the number of configured LLM instances.
+
+        中文说明: batch 并发可按该数量分配 workflow。
+        English: Batch concurrency can distribute workflows across this count.
+        """
         return len(self._llm_instances)
-
-    def get_pos_llm(self, pos: int) -> BaseChatModel:
-        if pos < 0 or pos >= len(self._llm_instances):
-            raise IndexError("LLM position out of range")
-        return self._llm_instances[pos]
-
-    def _init_llm(self, llm_config: Dict):
-        """初始化单个LLM实例"""
-        # 添加配置验证
-        if not llm_config:
-            raise ValueError("LLM configuration is required")
-
-        model_provider = llm_config.get("model_provider", "").lower()
-        model_name = llm_config.get("model")
-
-        if not model_name:
-            raise ValueError("model name is required in configuration")
-
-        # 创建配置副本以避免修改原始配置
-        config_copy = llm_config.copy()
-
-        # 移除不属于 LLM 初始化的参数
-        config_copy.pop("prompt_path", None)
-
-        # 添加特定于提供商的参数
-        if model_provider == "openai":
-            config_copy["base_url"] = get_base_url(llm_config)
-            llm_instance: BaseChatModel = init_chat_model(**config_copy)
-        elif model_provider == "ollama":
-            llm_instance: BaseChatModel = init_chat_model(**config_copy, validate_model_on_init=True)
-        else:
-            raise ValueError(f"Unsupported model provider: {model_provider}")
-
-        # 检查工具调用支持
-        try:
-            self.check_tool_callback(llm_instance, model_name)
-        except Exception as e:
-            logger.error(f"Tool callback check failed for {model_provider}/{config_copy.get('base_url')}/{model_name}: {e}")
-            raise e
-
-        logger.info(f"LLM initialized: {type(llm_instance).__name__} ({model_provider}/{config_copy["base_url"]}/{model_name})")
-        return llm_instance
 
     @property
     def llms(self) -> List[BaseChatModel]:
+        """Return all LLM instances.
+
+        中文说明: ForensicAgent 会为每个 LLM 构建独立 workflow。
+        English: ForensicAgent builds one workflow per LLM.
+        """
         return self._llm_instances
 
-    @property
-    def llm(self) -> BaseChatModel:
-        if len(self._llm_instances) < 1:
-            raise ValueError("No LLM instances available")
-        return self._llm_instances[0]
+    def get_pos_llm(self, pos: int) -> BaseChatModel:
+        """Return one LLM by position.
+
+        中文说明: 位置越界立即报错, 避免任务被提交到不存在的 workflow。
+        English: Out-of-range positions fail fast so tasks are not submitted to
+        missing workflows.
+        """
+        if pos < 0 or pos >= len(self._llm_instances):
+            raise IndexError("LLM position out of range.")
+        return self._llm_instances[pos]
+
+    def _init_llm(self, llm_config: Dict) -> BaseChatModel:
+        """Initialize one chat model.
+
+        中文说明: OpenAI-compatible 后端从环境变量或配置读取 API key, 配置模板不写密钥。
+        English: OpenAI-compatible backends read API keys from environment or
+        config, while the template never contains a key.
+        """
+        model_provider = str(llm_config.get("model_provider", "openai")).lower()
+        model_name = llm_config.get("model")
+        if not model_name:
+            raise ValueError("llm.model is required.")
+
+        config_copy = dict(llm_config)
+        config_copy.pop("prompt_path", None)
+        if model_provider == "openai":
+            config_copy["base_url"] = get_base_url(config_copy)
+            if not config_copy.get("api_key"):
+                config_copy["api_key"] = os.environ.get("OPENAI_API_KEY")
+            if not config_copy.get("api_key"):
+                raise ValueError("OPENAI_API_KEY is required for OpenAI-compatible providers.")
+            llm_instance = init_chat_model(**config_copy)
+        elif model_provider == "ollama":
+            llm_instance = init_chat_model(**config_copy, validate_model_on_init=True)
+        else:
+            raise ValueError(f"Unsupported llm.model_provider: {model_provider}")
+
+        self.check_tool_callback(llm_instance, model_name)
+        logger.info(f"LLM initialized: {type(llm_instance).__name__} ({model_provider}/{config_copy['base_url']}/{model_name})")
+        return llm_instance
 
     def check_tool_callback(self, llm_instance: BaseChatModel, model_name: str) -> bool:
-        """检查LLM是否支持工具调用"""
+        """Check whether the model exposes tool binding.
+
+        中文说明: 不强制失败, 但会记录警告; 某些模型声明不完整但仍可运行。
+        English: This does not fail hard; some models have incomplete metadata
+        but still work.
+        """
         bind_method = getattr(llm_instance, "bind_tools", None)
         if not callable(bind_method):
-            logger.warning(f"Model {model_name} does not expose bind_tools")
+            logger.warning(f"Model {model_name} does not expose bind_tools.")
             return False
-        logger.info(f"Model {model_name} declares tool calling support")
+        logger.info(f"Model {model_name} declares tool calling support.")
         return True

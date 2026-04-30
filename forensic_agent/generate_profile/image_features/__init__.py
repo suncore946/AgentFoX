@@ -1,2 +1,0 @@
-from .manual_feature_processor import ManualFeatureProcessor
-from .depth_feature_processor import DepthFeatureProcessor

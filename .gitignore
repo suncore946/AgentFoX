@@ -1,4 +1,6 @@
 # Byte-compiled / optimized / DLL files
+resources/x-fuse/*
+
 __pycache__/
 *.py[codz]
 *$py.class
@@ -214,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AgentFoX runtime artifacts
+outputs/
+logs/
+.agentfox_cache/
+*.tmp

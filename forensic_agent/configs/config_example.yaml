@@ -1,0 +1,329 @@
+# AgentFoX benchmark-post style example configuration.
+# 中文: 本示例以 benchmark_post 配置结构为模板, 仅保留可公开的占位值。
+# English: This example follows the benchmark_post configuration structure and keeps only public-safe placeholder values.
+
+# 中文: Agent 推理配置, 控制推理轮数、工具开关、提示词、输出目录和专家模型列表。
+# English: Agent reasoning configuration for iteration limits, tool switches, prompts, output paths, and expert-model names.
+agent:
+  # 中文: 单张图片允许的最大推理轮数; 达到上限后会停止工作流以避免无限循环。
+  # English: Maximum reasoning iterations per image; the workflow stops at this limit to avoid infinite loops.
+  max_iterations: 40
+
+  # 中文: 是否启用校准模块; benchmark_post 高级流程会开启, 最小开源运行可改为 false。
+  # English: Whether to enable calibration; benchmark_post advanced flow enables it, minimal open-source runs can set false.
+  open_calibration: true
+
+  # 中文: 是否启用语义分析结果; 通常应开启。
+  # English: Whether to enable semantic-analysis evidence; usually enabled.
+  open_semantic: true
+
+  # 中文: 是否启用专家模型分析; 需要用户自行提供专家模型结果和相关工具。
+  # English: Whether to enable expert-model analysis; requires user-provided expert outputs and tools.
+  open_expert: true
+
+  # 中文: 是否启用聚类分析; 需要用户自行提供聚类模型、缓存和 profile。
+  # English: Whether to enable clustering analysis; requires user-provided clustering models, caches, and profiles.
+  open_clustering: true
+
+  # 中文: Agent 主提示词模板路径。
+  # English: Path to the main agent prompt template.
+  agent_template: "./forensic_agent/configs/agent_template.txt"
+
+  # 中文: 最终报告器配置, 用于生成结构化结论。
+  # English: Final reporter configuration for structured verdict generation.
+  reporter:
+    # 中文: Reporter 提示词路径。
+    # English: Path to the reporter prompt.
+    prompt_path: "./forensic_agent/configs/prompts/reporter_prompt.txt"
+
+  # 中文: 结果保存目录; 建议使用相对路径, 不提交个人绝对路径。
+  # English: Result output directory; prefer relative paths and do not commit personal absolute paths.
+  save_dir: "./outputs/agent_results_example"
+
+  # 中文: benchmark_post 使用的专家模型名称列表; 名称需与用户提供的专家结果列保持一致。
+  # English: Expert model names used by benchmark_post; names must match user-provided expert-result columns.
+  expert_models:
+    - "DRCT"
+    - "PatchShuffle"
+    - "SPAI"
+    - "RINE"
+
+# 中文: LLM/VLM 配置, 作为 Agent 推理引擎。
+# English: LLM/VLM configuration used as the Agent reasoning engine.
+llm:
+  # 中文: 主推理模型名称; Ollama 示例使用 qwen3:32b, 用户可替换为自己的 VLM/LLM。
+  # English: Main reasoning model name; this Ollama example uses qwen3:32b and can be replaced by your own VLM/LLM.
+  model: "qwen3:32b"
+
+  # 中文: 模型服务地址列表; 示例只使用本机地址, 请不要提交私有服务器地址。
+  # English: Model service URL list; this example uses localhost only, do not commit private server addresses.
+  base_url:
+    - "http://localhost:11442"
+
+  # 中文: 模型服务提供方; 可使用 Ollama 或 OpenAI-compatible provider。
+  # English: Model provider; can be Ollama or an OpenAI-compatible provider.
+  model_provider: "Ollama"
+
+  # 中文: 是否启用流式输出; 批量测试通常关闭。
+  # English: Whether to stream output; usually disabled for batch testing.
+  stream: false
+
+  # 中文: 是否启用模型 reasoning 输出; 取决于模型和服务端支持。
+  # English: Whether to request model reasoning output; depends on model and server support.
+  reasoning: true
+
+  # 中文: 随机种子; 支持 seed 的后端可用它提高复现性。
+  # English: Random seed; backends that support seeds can use it for reproducibility.
+  seed: 42
+
+  # 中文: 上下文窗口大小; Ollama 等本地服务可读取该字段。
+  # English: Context-window size; local services such as Ollama may read this field.
+  num_ctx: 32000
+
+  # 中文: 采样温度; 取证任务建议使用 0 提高稳定性。
+  # English: Sampling temperature; 0 is recommended for stable forensic inference.
+  temperature: 0
+
+  # 中文: 主模型是否支持图片输入; 使用视觉语言模型时设为 true。
+  # English: Whether the main model supports image input; set true for vision-language models.
+  support_vision: true
+
+# 中文: 日志配置。
+# English: Logging configuration.
+logging:
+  # 中文: 日志级别; 调试时可改为 DEBUG。
+  # English: Log level; use DEBUG for troubleshooting.
+  level: "INFO"
+
+  # 中文: 日志格式; detailed 会包含模块、函数和行号。
+  # English: Log format; detailed includes module, function, and line number.
+  format: "detailed"
+
+  # 中文: 日志文件路径; 设为 null 可关闭文件日志。
+  # English: Log file path; set to null to disable file logging.
+  file_path: "./logs/agentfox_example.log"
+
+  # 中文: 日志轮转大小。
+  # English: Log rotation size.
+  rotation: "10 MB"
+
+  # 中文: 日志保留时长。
+  # English: Log retention period.
+  retention: "7 days"
+
+  # 中文: 轮转日志压缩格式。
+  # English: Compression format for rotated logs.
+  compression: "zip"
+
+# 中文: 聚类配置; benchmark_post 高级流程使用, 最小开源推理可不配置或关闭 open_clustering。
+# English: Clustering configuration for the advanced benchmark_post flow; minimal open-source inference can omit it or disable open_clustering.
+clustering:
+  # 中文: 聚类训练集 CSV 路径占位。
+  # English: Placeholder path to the clustering training CSV.
+  train_dataset: "./sample_inputs/clustering/train.csv"
+
+  # 中文: 聚类验证集 CSV 路径占位。
+  # English: Placeholder path to the clustering validation CSV.
+  val_dataset: "./sample_inputs/clustering/val.csv"
+
+  # 中文: 训练集名称, 用于日志和 profile 命名。
+  # English: Training dataset name used in logs and profile naming.
+  train_name: "GenImage"
+
+  # 中文: 验证集名称, 用于日志和 profile 命名。
+  # English: Validation dataset name used in logs and profile naming.
+  val_name: "GenImage"
+
+  # 中文: 聚类模型保存或加载目录占位。
+  # English: Placeholder directory for saving or loading clustering models.
+  model_dir: "./outputs/cluster_models"
+
+  # 中文: 特征缓存目录; 已提取过的图像特征可从这里复用。
+  # English: Feature-cache directory; previously extracted image features can be reused from here.
+  cache_dir: "./outputs/cache"
+
+  # 中文: 用于聚类的专家/特征列组合。
+  # English: Expert/feature column groups used for clustering.
+  target_columns:
+    - ["CLIP"]
+    - ["CFA"]
+    - ["SRM"]
+
+  # 中文: 聚类特征提取或加载时的 batch size。
+  # English: Batch size for clustering feature extraction or loading.
+  batch_size: 64
+
+  # 中文: 数据加载 worker 数量。
+  # English: Number of data-loading workers.
+  num_workers: 16
+
+  # 中文: 参与聚类 profile 的数据集名称列表。
+  # English: Dataset names included in clustering profiles.
+  dataset_names:
+    - "GenImage"
+
+  # 中文: 聚类分析涉及的专家模型名称。
+  # English: Expert model names used by clustering analysis.
+  model_names:
+    - "DRCT"
+    - "Patch_Shuffle"
+    - "SPAI"
+    - "RINE"
+
+  # 中文: 是否强制重新提取特征/重建缓存。
+  # English: Whether to force feature re-extraction or cache rebuilding.
+  force_reload: false
+
+# 中文: 校准配置; benchmark_post 高级流程使用, 最小开源推理可关闭 open_calibration。
+# English: Calibration configuration for the advanced benchmark_post flow; minimal open-source inference can disable open_calibration.
+calibration:
+  # 中文: 校准训练结果 CSV 路径占位。
+  # English: Placeholder path to calibrated training-result CSV.
+  train_dataset: "./sample_inputs/calibration/calibrated_train_results.csv"
+
+  # 中文: 校准验证/评估结果 CSV 路径占位。
+  # English: Placeholder path to calibrated validation/evaluation-result CSV.
+  dataset: "./sample_inputs/calibration/calibrated_val_results.csv"
+
+# 中文: 测试数据集配置。
+# English: Test dataset configuration.
+datasets:
+  # 中文: 测试 CSV 列表; CSV 至少需要 image_path 和 gt_label, dataset_name 可选。
+  # English: Test CSV list; each CSV needs at least image_path and gt_label, dataset_name is optional.
+  test_paths:
+    - "./examples/test.csv"
+
+  # 中文: 可选图片根目录; 相对 image_path 会优先基于该目录解析。
+  # English: Optional image root; relative image_path values resolve against this directory first.
+  image_root:
+
+  # 中文: 可选运行时缓存目录; 留空时默认使用第一个 CSV 同级缓存目录。
+  # English: Optional runtime cache directory; empty means using a cache directory beside the first CSV.
+  runtime_cache_dir:
+
+# 中文: 工具配置。
+# English: Tool configuration.
+tools:
+  # 中文: 聚类分析工具配置; 需要聚类 prompt 和 profile 资产。
+  # English: Clustering-analysis tool settings; requires clustering prompts and profile assets.
+  ClusteringAnalysis:
+    # 中文: 聚类分析提示词路径占位。
+    # English: Placeholder path to the clustering-analysis prompt.
+    prompt_path: "./forensic_agent/configs/prompts/cluster_analysis_prompt.txt"
+
+  # 中文: 专家分析工具配置; 需要专家结果和专家分析提示词。
+  # English: Expert-analysis tool settings; requires expert results and an expert-analysis prompt.
+  ExpertAnalysis:
+    # 中文: 专家分析提示词路径占位。
+    # English: Placeholder path to the expert-analysis prompt.
+    prompt_path: "./forensic_agent/configs/prompts/expert_analysis_prompt.txt"
+
+  # 中文: 语义分析工具配置; 最小开源流程主要依赖该工具。
+  # English: Semantic-analysis tool settings; the minimal open-source workflow mainly relies on this tool.
+  SemanticAnalysis:
+    # 中文: 语义分析提示词路径。
+    # English: Path to the semantic-analysis prompt.
+    prompt_path: "./forensic_agent/configs/prompts/semantic_analysis.txt"
+
+    # 中文: 语义工具内部使用的空间域特征开关。
+    # English: Spatial-feature switches used inside the semantic tool.
+    spatial:
+      # 中文: 是否启用 LBP 纹理特征。
+      # English: Whether to enable LBP texture features.
+      enable_lbp: true
+
+      # 中文: 是否启用 GLCM 灰度共生矩阵特征。
+      # English: Whether to enable GLCM co-occurrence features.
+      enable_glcm: true
+
+      # 中文: 是否启用边缘统计特征。
+      # English: Whether to enable edge statistics.
+      enable_edge: true
+
+    # 中文: 语义工具内部使用的频域特征开关。
+    # English: Frequency-feature switches used inside the semantic tool.
+    frequency:
+      # 中文: 是否启用 FFT 功率谱统计。
+      # English: Whether to enable FFT power-spectrum statistics.
+      enable_fft: true
+
+      # 中文: 是否启用 DCT 块统计。
+      # English: Whether to enable DCT block statistics.
+      enable_dct: true
+
+      # 中文: 是否启用小波特征; 需要额外依赖时可开启。
+      # English: Whether to enable wavelet features; enable only when the extra dependency is available.
+      enable_wavelet: false
+
+      # 中文: 小波类型; 仅 enable_wavelet=true 时使用。
+      # English: Wavelet type; used only when enable_wavelet=true.
+      wavelet_type: "db4"
+
+      # 中文: 小波分解层数; 仅 enable_wavelet=true 时使用。
+      # English: Wavelet decomposition levels; used only when enable_wavelet=true.
+      wavelet_levels: 3
+
+    # 中文: 噪声鲁棒性测试配置; 会增加计算量, 最小运行可关闭。
+    # English: Noise-robustness testing; increases computation and can be disabled for minimal runs.
+    noise_robustness:
+      # 中文: 是否启用噪声鲁棒性测试。
+      # English: Whether to enable noise-robustness testing.
+      enable: false
+
+      # 中文: 噪声类型列表。
+      # English: List of noise types.
+      noise_types: ["gaussian", "salt_pepper"]
+
+      # 中文: 噪声强度范围。
+      # English: Noise intensity range.
+      intensity_range: [0.01, 0.1]
+
+  # 中文: 工具专用 LLM 配置; 若为空, 工具会复用主 LLM。
+  # English: Tool-specific LLM configuration; if omitted, tools reuse the main LLM.
+  llm_config:
+    # 中文: OpenAI-compatible 工具模型地址示例; 请替换为自己的公开或本地服务地址。
+    # English: Example OpenAI-compatible tool-model URL; replace with your own public or local service.
+    base_url: "https://api.openai.com/v1"
+
+    # 中文: 不要在配置文件中写真实 key; 运行时建议通过环境变量注入。
+    # English: Do not write real keys into config files; inject credentials through environment variables at runtime.
+    api_key:
+
+    # 中文: 工具 LLM 模型名。
+    # English: Tool LLM model name.
+    model: "gpt-4o-mini"
+
+    # 中文: 工具 LLM 采样温度。
+    # English: Sampling temperature for the tool LLM.
+    temperature: 0.1
+
+    # 中文: 工具 LLM 请求超时时间, 单位秒。
+    # English: Tool LLM request timeout in seconds.
+    timeout: 120
+
+    # 中文: 工具 LLM provider 类型。
+    # English: Provider type for the tool LLM.
+    model_provider: "OpenAI"
+
+    # 中文: 工具 LLM 是否流式输出。
+    # English: Whether the tool LLM streams output.
+    streaming: true
+
+# 中文: 模型画像/profile 配置; benchmark_post 高级流程使用, 本示例仅提供相对占位路径。
+# English: Model/profile configuration for the advanced benchmark_post flow; this example uses relative placeholder paths only.
+profiles:
+  # 中文: 专家模型性能画像 JSON 路径。
+  # English: Path to expert-model performance profile JSON.
+  model_profiles: "./profiles/model_profiles.json"
+
+  # 中文: 聚类性能画像 JSON 路径。
+  # English: Path to clustering-performance profile JSON.
+  clustering_performance_profiles: "./profiles/clustering_performance_profiles.json"
+
+  # 中文: 聚类分析画像 JSON 路径。
+  # English: Path to clustering-analysis profile JSON.
+  clustering_analysis_profiles: "./profiles/clustering_analysis_profiles.json"
+
+  # 中文: 校准 profile JSON 路径。
+  # English: Path to calibration profile JSON.
+  calibration_profiles: "./profiles/calibration_profile.json"

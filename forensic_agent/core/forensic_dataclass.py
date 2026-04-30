@@ -1,62 +1,27 @@
-from enum import Enum
-from pathlib import Path
+"""Shared data models for the minimal AgentFoX runtime.
+
+中文说明: 这里只保留 test/analyze 路径需要的数据结构, 不包含训练、校准或专家融合模型。
+English: This file keeps only the data structures needed by test/analyze and
+does not include training, calibration, or expert-fusion models.
+"""
+
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional
-import numpy as np
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
-
-
-class ConflictResolutionStrategy(Enum):
-    """冲突解决策略枚举"""
-
-    HIGHEST_CONFIDENCE = "highest_confidence"
-    STATIC_WEIGHT_VOTING = "static_weight_voting"
-    CKB_ARBITRATION = "ckb_arbitration"
-    PROFILE_ARBITRATION = "profile_arbitration"
-    UMPIRE_MODEL = "umpire_model"
-    EMBRACE_UNCERTAINTY = "embrace_uncertainty"
-
-
-@dataclass
-class ModelOutput:
-    """模型输出数据"""
-
-    model_name: str
-    prediction: str
-    raw_logits: np.ndarray
-    calibrated_confidence: float
-    reasoning: Optional[str] = None
-
-
-@dataclass
-class ConflictResolutionResult:
-    """冲突解决结果"""
-
-    final_prediction: str
-    final_confidence: float
-    strategy_used: ConflictResolutionStrategy
-    reasoning: str
-    evidence: List[str]
-    model_contributions: Dict[str, float]
-    needs_human_review: bool = False
-    uncertainty_score: float = 0.0
-
-
-@dataclass
-class StageResult:
-    """阶段结果数据类"""
-
-    stage_name: str
-    success: bool
-    data: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    processing_time: float = 0.0
-    error: Optional[str] = None
 
 
 @dataclass
 class ProcessingResult:
-    """处理结果数据类"""
+    """Optional single-image processing summary.
+
+    中文说明: 主要用于类型标注和未来 API 封装, CLI 当前保存 dict 结果。
+    English: Mainly used for typing and future API wrappers; the CLI currently
+    writes dict results.
+    """
 
     image_path: str | Path
     classification: str
@@ -69,31 +34,37 @@ class ProcessingResult:
     decision_chain: List[Dict[str, Any]] = field(default_factory=list)
 
 
-@dataclass
-class BatchProcessingResult:
-    """批处理结果数据类"""
-
-    total_processed: int
-    successful: int
-    failed: int
-    results: List[ProcessingResult] = field(default_factory=list)
-    processing_time: float = 0.0
-
-
 class FinalResponse(BaseModel):
+    """Structured final verdict produced by the reporter.
+
+    中文说明: finally_result 必须遵循 0=真实图像, 1=AI 生成/伪造图像。
+    English: finally_result must follow 0=authentic image, 1=AI-generated or
+    forged image.
+    """
+
     is_success: bool = Field(
         ...,
-        description="Audit Status: True if logic is consistent; False if contradictions are detected.",
+        description="True if the report is internally consistent and usable.",
     )
     reasoning: str = Field(
         ...,
-        description="Audit Justification: If consistent, summarize facts supporting the verdict. If inconsistent, strictly list the logical conflicts.",
+        description="Concise forensic justification grounded in the conversation history.",
     )
-    finally_result: int = Field(..., description="Verdict: 0 = Authentic, 1 = Fake. (Valid only when is_success is True).")
+    finally_result: int = Field(
+        ...,
+        ge=0,
+        le=1,
+        description="Verdict: 0 = authentic, 1 = AI-generated/forged.",
+    )
 
 
 class CheckingResult(BaseModel):
-    pred_result: int = Field(..., description="Final conclusion: 0 = authentic, 1 = fake/forged")
-    is_success: bool = Field(
-        ..., description="Indicates whether the analysis was ultimately completed successfully, regardless of any intermediate failures."
-    )
+    """Compatibility result for simple binary checks.
+
+    中文说明: 保留轻量兼容结构, 不引入旧专家工具依赖。
+    English: Kept as a lightweight compatibility structure without old expert
+    tool dependencies.
+    """
+
+    pred_result: int = Field(..., ge=0, le=1, description="Final conclusion: 0 = authentic, 1 = fake/forged")
+    is_success: bool = Field(..., description="Whether the analysis completed successfully.")
