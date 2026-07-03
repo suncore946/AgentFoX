@@ -66,7 +66,7 @@ class AFAApplication:
             return
 
         from forensic_agent.application_builder import ApplicationBuilder
-        from forensic_agent.core.forensic_agent import ForensicAgent
+        from forensic_agent.core.command_and_reasoning_core import CommandAndReasoningCore
         from forensic_agent.manager.config_manager import ConfigManager
         from forensic_agent.manager.image_manager import ImageManager
         from forensic_agent.manager.logger_manager import LoggerManager
@@ -76,7 +76,7 @@ class AFAApplication:
         self.logger: LoggerManager = self._container.get_service(LoggerManager)
         self.image_manager: ImageManager = self._container.get_service(ImageManager)
         self.datasets_manager: DatasetsManager = self._container.get_service(DatasetsManager)
-        self.agent: ForensicAgent = self._container.get_service(ForensicAgent)
+        self.agent: CommandAndReasoningCore = self._container.get_service(CommandAndReasoningCore)
         self._initialized = True
         self.logger.info("AgentFoX application initialized.")
 

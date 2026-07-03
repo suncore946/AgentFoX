@@ -58,8 +58,8 @@ class ForensicLLM:
     def llms(self) -> List[BaseChatModel]:
         """Return all LLM instances.
 
-        中文说明: ForensicAgent 会为每个 LLM 构建独立 workflow。
-        English: ForensicAgent builds one workflow per LLM.
+        中文说明: CommandAndReasoningCore 会为每个 LLM 构建独立 workflow。
+        English: CommandAndReasoningCore builds one workflow per LLM.
         """
         return self._llm_instances
 
@@ -101,7 +101,7 @@ class ForensicLLM:
             raise ValueError(f"Unsupported llm.model_provider: {model_provider}")
 
         self.check_tool_callback(llm_instance, model_name)
-        logger.info(f"LLM initialized: {type(llm_instance).__name__} ({model_provider}/{config_copy['base_url']}/{model_name})")
+        logger.info(f"LLM initialized: {type(llm_instance).__name__} ({model_provider}/{model_name})")
         return llm_instance
 
     def check_tool_callback(self, llm_instance: BaseChatModel, model_name: str) -> bool:

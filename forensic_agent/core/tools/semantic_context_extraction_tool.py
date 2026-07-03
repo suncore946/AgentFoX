@@ -14,10 +14,10 @@ from ...manager.image_manager import ImageManager
 from ...manager.profile_manager import ProfileManager
 from ...processor.image_feat_processor import ImageFeatProcessor
 from ...utils import create_chat_llm
-from .tools_base import ToolsBase
+from .tools_base import AgenticTool
 
 
-class SemanticAnalysisTool(ToolsBase):
+class SemanticContextExtractionTool(AgenticTool):
     """Analyze semantic-level AIGC clues.
 
     中文说明: 如果缓存中已有 semantic profile, 直接复用; 否则调用 VLM 生成并写入缓存。
@@ -44,7 +44,7 @@ class SemanticAnalysisTool(ToolsBase):
 
     @property
     def name(self) -> str:
-        return "semantic_analysis"
+        return "semantic_context_extraction"
 
     @property
     def description(self) -> str:

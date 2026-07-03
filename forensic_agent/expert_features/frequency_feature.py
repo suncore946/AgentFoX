@@ -1,8 +1,8 @@
 """Frequency-domain lightweight feature extraction.
 
-中文说明: 这些传统频域统计只作为 VLM 语义分析的辅助上下文, 不加载检测模型权重。
+中文说明: 这些传统频域统计只作为 Semantic Context Extraction 的辅助上下文, 不加载检测模型权重。
 English: These classical frequency statistics are only auxiliary context for
-VLM semantic analysis and do not load detector weights.
+Semantic Context Extraction and do not load detector weights.
 """
 
 from __future__ import annotations

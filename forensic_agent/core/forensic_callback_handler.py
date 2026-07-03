@@ -65,9 +65,9 @@ class ExecutionContext:
 class ForensicCallbackHandler(BaseCallbackHandler):
     """Collect lightweight callback telemetry.
 
-    中文说明: model_name 是可选字段, 兼容 ForensicAgent 为每个 workflow 传入模型名。
+    中文说明: model_name 是可选字段, 兼容 CommandAndReasoningCore 为每个 workflow 传入模型名。
     English: model_name is optional and supports per-workflow metadata passed by
-    ForensicAgent.
+    CommandAndReasoningCore.
     """
 
     def __init__(

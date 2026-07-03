@@ -11,10 +11,16 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from langchain_core.messages import ToolMessage
+import yaml
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import RunnableLambda
 
-from forensic_agent.core.forensic_reporter import ForensicReporter
+from forensic_agent.core.agentic_toolkit import AgenticToolkit
+from forensic_agent.core.forensic_dataclass import FinalResponse
+from forensic_agent.core.forensic_report_formulation import ForensicReportFormulator
 from forensic_agent.manager.datasets_manager import DatasetsManager
+from forensic_agent.manager.image_manager import ImageManager
+from forensic_agent.manager.profile_manager import ProfileManager
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
@@ -71,16 +77,97 @@ def test_reporter_missing_expert_tool_result_returns_empty_dict() -> None:
     English: The minimal config has no expert_results tool, so missing output
     must become an empty dict.
     """
-    reporter = ForensicReporter.__new__(ForensicReporter)
+    reporter = ForensicReportFormulator.__new__(ForensicReportFormulator)
     state = {
         "messages": [
             ToolMessage(
                 content=json.dumps({"semantic_result": 1}),
-                name="semantic_analysis",
+                name="semantic_context_extraction",
                 tool_call_id="semantic-call",
             )
         ]
     }
 
-    assert reporter._load_tool_result(state, "semantic_analysis") == {"semantic_result": 1}
+    assert reporter._load_tool_result(state, "semantic_context_extraction") == {"semantic_result": 1}
     assert reporter._load_tool_result(state, "expert_results") == {}
+
+
+def test_config_prompt_paths_exist() -> None:
+    """Open-source configs should not reference renamed or missing prompt files."""
+    for config_path in [
+        Path("forensic_agent/configs/config_minimal_test.yaml"),
+        Path("forensic_agent/configs/config_example.yaml"),
+        Path("resources/config_example.yaml"),
+    ]:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+        prompt_paths = [
+            config["agent"]["agent_template"],
+            config["agent"]["reporter"]["prompt_path"],
+            config["tools"]["SemanticContextExtraction"]["prompt_path"],
+        ]
+        for prompt_path in prompt_paths:
+            assert Path(prompt_path).exists(), f"{config_path} references missing prompt: {prompt_path}"
+
+
+def test_agentic_toolkit_registers_semantic_context_extraction(tmp_path: Path) -> None:
+    """The method-named tool should be discoverable with the minimal config."""
+    csv_path = tmp_path / "test.csv"
+    write_csv(csv_path, [{"image_path": "images/a.jpg", "gt_label": 1}])
+
+    datasets_manager = DatasetsManager({"test_paths": str(csv_path)})
+    image_manager = ImageManager({"max_width": 128, "max_height": 128})
+    profile_manager = ProfileManager({"datasets": {"runtime_cache_dir": str(tmp_path / ".cache")}})
+    fake_llm = RunnableLambda(lambda _: AIMessage(content="{}"))
+
+    toolkit = AgenticToolkit(
+        {
+            "open_semantic": True,
+            "SemanticContextExtraction": {
+                "prompt_path": "forensic_agent/configs/prompts/semantic_context_extraction.txt",
+            },
+        },
+        image_manager=image_manager,
+        profile_manager=profile_manager,
+        dataset_manager=datasets_manager,
+        tools_llm=fake_llm,
+    )
+    toolkit.auto_discover_and_register()
+
+    assert [tool.name for tool in toolkit.get_all_tools()] == ["semantic_context_extraction"]
+
+
+def test_report_formulation_uses_system_prompt_and_tool_history() -> None:
+    """ForensicReportFormulator should include the prompt file and tool output."""
+
+    class StructuredRecorder:
+        def __init__(self) -> None:
+            self.calls = []
+
+        def invoke(self, messages):
+            self.calls.append(messages)
+            return FinalResponse(is_success=True, reasoning="consistent", finally_result=1)
+
+    structured_llm = StructuredRecorder()
+    reporter = ForensicReportFormulator.__new__(ForensicReportFormulator)
+    reporter.system_prompt = "system audit prompt"
+    reporter.self_expressing = True
+    reporter.llm_with_structured = structured_llm
+
+    state = {
+        "messages": [
+            ToolMessage(
+                content=json.dumps({"semantic_result": 1}),
+                name="semantic_context_extraction",
+                tool_call_id="semantic-call",
+            ),
+            AIMessage(content="Semantic evidence indicates forgery. update stage to: forensic_report_formulation"),
+        ]
+    }
+
+    updated_state = reporter.generate_report(state)
+
+    assert updated_state["final_response"]["finally_result"] == 1
+    assert isinstance(structured_llm.calls[0][0], SystemMessage)
+    assert structured_llm.calls[0][0].content == "system audit prompt"
+    assert "semantic_context_extraction" in structured_llm.calls[0][1].content

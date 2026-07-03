@@ -18,23 +18,23 @@ AgentFoX/
 │   │   ├── agent_template.txt
 │   │   └── prompts/
 │   │       ├── reporter_prompt.txt
-│   │       └── semantic_analysis.txt
+│   │       └── semantic_context_extraction.txt
 │   ├── core/
-│   │   ├── forensic_agent.py
+│   │   ├── command_and_reasoning_core.py
 │   │   ├── forensic_llm.py
-│   │   ├── forensic_reporter.py
-│   │   ├── forensic_tools.py
-│   │   └── tools/semantic_analysis_tool.py
+│   │   ├── forensic_report_formulation.py
+│   │   ├── agentic_toolkit.py
+│   │   └── tools/semantic_context_extraction_tool.py
 │   ├── expert_features/
 │   ├── manager/
 │   ├── processor/
 │   └── utils/
-├── docs/README_ZH.md
+├── resources/docs/README_ZH.md
 ├── requirements.txt
 └── tests/
 ```
 
-The default workflow runs semantic image analysis and asks the reporter to produce a final binary verdict:
+The default workflow runs `SemanticContextExtraction` and then `ForensicReportFormulation` to produce a final binary verdict:
 
 - `0`: authentic camera-captured image
 - `1`: AI-generated or forged image
@@ -141,7 +141,7 @@ outputs/agentfox_minimal/
 
 - `max_iterations`: maximum LangGraph reasoning iterations.
 - `per_workflow_workers`: reserved for future local worker usage; minimal CLI runs serially.
-- `open_semantic`: enables the semantic analysis tool.
+- `open_semantic`: enables the `semantic_context_extraction` tool.
 - `open_expert`, `open_calibration`, `open_clustering`: disabled in the minimal release.
 - `agent_template`: path to the Agent system prompt.
 - `reporter.prompt_path`: path to the final-report audit prompt.
@@ -171,9 +171,9 @@ outputs/agentfox_minimal/
 - `log_dir`, `file_name`: file log destination.
 - `rotation`, `retention`: Loguru file rotation settings.
 
-`tools.SemanticAnalysis.prompt_path`
+`tools.SemanticContextExtraction.prompt_path`
 
-- Prompt used by the semantic analysis processor.
+- Prompt used by the semantic context extraction processor.
 
 ## Security And Data Boundaries
 
@@ -187,6 +187,10 @@ This repository intentionally does not include:
 - annotation, model training, or private expert-model pipelines
 
 End-to-end inference requires an external LLM/VLM service. The repository does not run a real networked LLM test unless you provide valid credentials or a local service.
+
+## License
+
+This code release is licensed under the Apache License 2.0. See [LICENSE](LICENSE).
 
 ## Verification
 

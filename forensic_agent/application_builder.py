@@ -10,9 +10,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Type
 
-from .core.forensic_agent import ForensicAgent
+from .core.command_and_reasoning_core import CommandAndReasoningCore
 from .core.forensic_llm import ForensicLLM
-from .core.forensic_tools import ForensicTools
+from .core.agentic_toolkit import AgenticToolkit
 from .manager.config_manager import ConfigManager
 from .manager.datasets_manager import DatasetsManager
 from .manager.image_manager import ImageManager
@@ -106,9 +106,9 @@ class ApplicationBuilder:
             | config_manager.get_section("agent", {})
             | {"feature_extraction": config_manager.get_section("feature_extraction", {})}
         )
-        forensic_tools = self._get_or_create_service(
-            ForensicTools,
-            lambda: ForensicTools(
+        agentic_toolkit = self._get_or_create_service(
+            AgenticToolkit,
+            lambda: AgenticToolkit(
                 config=tools_config,
                 image_manager=image_manager,
                 profile_manager=profile_manager,
@@ -116,13 +116,13 @@ class ApplicationBuilder:
                 tools_llm=default_llm,
             ),
         )
-        forensic_tools.auto_discover_and_register()
+        agentic_toolkit.auto_discover_and_register()
 
         self._get_or_create_service(
-            ForensicAgent,
-            lambda: ForensicAgent(
+            CommandAndReasoningCore,
+            lambda: CommandAndReasoningCore(
                 config=config_manager.get_section("agent", {}),
-                forensic_tool=forensic_tools,
+                agentic_toolkit=agentic_toolkit,
                 forensic_llm=forensic_llm,
                 image_manager=image_manager,
                 is_debug=self.is_debug,

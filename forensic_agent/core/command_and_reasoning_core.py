@@ -8,6 +8,7 @@ executable state graph.
 from __future__ import annotations
 
 import atexit
+import inspect
 import json
 import re
 from queue import Empty, Queue
@@ -29,9 +30,9 @@ from ..manager.image_manager import ImageManager
 from .agent_state import CustomAgentState, StageEnum
 from .forensic_callback_handler import ForensicCallbackHandler
 from .forensic_llm import ForensicLLM
-from .forensic_reporter import create_reporter_node
+from .forensic_report_formulation import create_report_formulation_node
 from .forensic_template import ForensicTemplate
-from .forensic_tools import ForensicTools
+from .agentic_toolkit import AgenticToolkit
 
 
 class WorkflowExecutor:
@@ -126,7 +127,7 @@ class WorkflowExecutor:
                 queue.task_done()
 
 
-class ForensicAgent:
+class CommandAndReasoningCore:
     """Run the AgentFoX state machine for one image.
 
     中文说明: Agent 每轮必须输出 `update stage to: ...`, stage_check 据此推进流程。
@@ -143,13 +144,13 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
     def __init__(
         self,
         config: dict,
-        forensic_tool: ForensicTools,
+        agentic_toolkit: AgenticToolkit,
         forensic_llm: ForensicLLM,
         image_manager: ImageManager,
         is_debug: bool = False,
     ):
         self.agent_config = config or {}
-        self.forensic_tool = forensic_tool
+        self.agentic_toolkit = agentic_toolkit
         self.forensic_llm = forensic_llm
         self.llms: List[BaseChatModel] = forensic_llm.llms
         self.image_manager = image_manager
@@ -164,7 +165,7 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
         self.workflow_tools: Dict[int, List[Any]] = {}
         self.num_workflows = len(self.llms)
         for workflow_id, llm in enumerate(self.llms):
-            tools = self.forensic_tool.get_tools_for_llm(llm)
+            tools = self.agentic_toolkit.get_tools_for_llm(llm)
             self.workflow_tools[workflow_id] = tools
             self.workflow_info[workflow_id] = self._build_graph(llm, tools)
         if self.num_workflows == 0:
@@ -178,7 +179,7 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
         self._next_workflow = 0
         self._lock = Lock()
         atexit.register(lambda: self.shutdown_workers(wait=False))
-        logger.info("AgentFoX forensic agent initialized.")
+        logger.info("AgentFoX Command-and-Reasoning Core initialized.")
 
     def _dispatch_task(self, workflow_id: int, payload: Tuple[Any, ...]) -> None:
         image_path, result_queue, error_queue = payload
@@ -195,7 +196,7 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
         """
         if workflow_id is not None and workflow_id in self.workflow_tools:
             return self.workflow_tools[workflow_id]
-        return self.forensic_tool.get_all_tools()
+        return self.agentic_toolkit.get_all_tools()
 
     def stage_check(self, state: CustomAgentState) -> Dict[str, Any]:
         """Parse stage transition from the latest AI message.
@@ -233,10 +234,6 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
 
         try:
             state["current_stage"] = _check_stage(state["messages"])
-            if state["current_stage"] == StageEnum.FINALLY_REPORT:
-                state["messages"].append(
-                    HumanMessage(content='Do not use tools in this step. Produce the final report and end with "update stage to: done".')
-                )
         except Exception as exc:
             logger.debug(f"Stage parsing failed: {exc}")
             state["messages"].append(HumanMessage(content=str(exc)))
@@ -251,16 +248,23 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
     def _build_graph(self, llm_instance: BaseChatModel, tools: List[Any]):
         """Build one LangGraph workflow.
 
-        中文说明: workflow = agent -> stage_check -> agent/finally_report/end。
-        English: workflow = agent -> stage_check -> agent/finally_report/end.
+        中文说明: workflow = agent -> stage_check -> agent/forensic_report_formulation/end。
+        English: workflow = agent -> stage_check -> agent/forensic_report_formulation/end.
         """
-        finally_report = create_reporter_node(self.agent_config.get("reporter", {}), llm_instance, True)
-        react_agent = create_react_agent(
-            model=llm_instance,
-            tools=tools,
-            prompt=self.prompt_template.template,
-            state_schema=CustomAgentState,
-        )
+        forensic_report_formulation = create_report_formulation_node(self.agent_config.get("reporter", {}), llm_instance, True)
+        react_agent_kwargs = {
+            "model": llm_instance,
+            "tools": tools,
+            "state_schema": CustomAgentState,
+        }
+        react_agent_signature = inspect.signature(create_react_agent)
+        if "prompt" in react_agent_signature.parameters:
+            react_agent_kwargs["prompt"] = self.prompt_template.template
+        elif "state_modifier" in react_agent_signature.parameters:
+            react_agent_kwargs["state_modifier"] = self.prompt_template.template
+        elif "messages_modifier" in react_agent_signature.parameters:
+            react_agent_kwargs["messages_modifier"] = self.prompt_template.template
+        react_agent = create_react_agent(**react_agent_kwargs)
 
         def should_continue(state: CustomAgentState) -> str:
             stage = StageEnum(state["current_stage"])
@@ -268,7 +272,7 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
                 raise ValueError("Maximum iterations reached.")
             if stage == StageEnum.DONE:
                 if not state.get("final_response"):
-                    return "finally_report"
+                    return "forensic_report_formulation"
                 if state["final_response"].get("is_success") is False:
                     return "agent"
                 return END
@@ -276,16 +280,18 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
                 recent = state["messages"][-5:]
                 context = "\n".join(f"- {type(message).__name__}: {getattr(message, 'content', '')}" for message in recent)
                 raise ValueError(f"Agent entered error state. Recent messages:\n{context}")
+            if stage == StageEnum.FORENSIC_REPORT_FORMULATION:
+                return "forensic_report_formulation"
             return "agent"
 
         graph = StateGraph(state_schema=CustomAgentState)
         graph.add_node("agent", react_agent)
         graph.add_node("stage_check", self.stage_check)
-        graph.add_node("finally_report", finally_report)
+        graph.add_node("forensic_report_formulation", forensic_report_formulation)
         graph.set_entry_point("agent")
         graph.add_edge("agent", "stage_check")
-        graph.add_edge("finally_report", "stage_check")
-        graph.add_conditional_edges("stage_check", should_continue, {"agent": "agent", "finally_report": "finally_report", END: END})
+        graph.add_edge("forensic_report_formulation", "stage_check")
+        graph.add_conditional_edges("stage_check", should_continue, {"agent": "agent", "forensic_report_formulation": "forensic_report_formulation", END: END})
         return graph.compile(debug=self.verbose, checkpointer=InMemorySaver())
 
     def get_input(self, image_path: str) -> dict[str, Any]:
@@ -343,7 +349,11 @@ Analyze the image to determine whether it is authentic or AI-generated. Use avai
             current_stage=StageEnum.INITIAL,
             iterations=0,
         )
-        agent_state: dict = self.workflow_info[workflow_id].invoke(input_state, config=config, durability="sync")
+        workflow = self.workflow_info[workflow_id]
+        invoke_kwargs = {}
+        if "durability" in inspect.signature(workflow.stream).parameters:
+            invoke_kwargs["durability"] = "sync"
+        agent_state: dict = workflow.invoke(input_state, config=config, **invoke_kwargs)
         agent_state["metrics"] = callback_handler.get_summary()
         if agent_state.get("final_response"):
             agent_state["final_response"]["metrics"] = agent_state["metrics"]

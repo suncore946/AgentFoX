@@ -1,8 +1,9 @@
-"""Final structured report generation.
+"""Forensic Report Formulation for structured final output.
 
-中文说明: Reporter 将 Agent 对话历史压缩为最终 JSON 结论, 并兼容没有 expert tool 的最小配置。
-English: The reporter converts agent conversation history into a final JSON
-verdict and supports minimal configs without expert tools.
+中文说明: Forensic Report Formulation 将 Agent 对话历史压缩为最终 JSON 结论,
+并兼容没有 expert tool 的最小配置。
+English: Forensic Report Formulation converts agent conversation history into a
+final JSON verdict and supports minimal configs without expert tools.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 from loguru import logger
 
@@ -21,12 +22,12 @@ from .agent_state import CustomAgentState
 from .forensic_dataclass import FinalResponse
 
 
-class ForensicReporter:
+class ForensicReportFormulator:
     """Generate and validate the final forensic verdict.
 
-    中文说明: 该类只依赖已有对话和工具输出, 不再调用已删除的 profile/专家代码。
+    中文说明: 该类对应论文中的 Forensic Report Formulation 子任务, 只依赖已有对话和工具输出。
     English: This class depends only on existing conversation and tool outputs;
-    it no longer calls removed profile or expert code.
+    it implements the paper's Forensic Report Formulation step.
     """
 
     USER_PROMPT_TEMPLATE = """
@@ -65,7 +66,7 @@ Previous content:
             raise ValueError("A reporter LLM instance is required.")
         self.self_expressing = self_expressing
         self.llm_with_structured = self.llm.with_structured_output(FinalResponse)
-        logger.info("ForensicReporter initialized.")
+        logger.info("ForensicReportFormulator initialized.")
 
     def generate_report(self, state: CustomAgentState) -> CustomAgentState:
         """Generate final_response and update state.
@@ -74,16 +75,17 @@ Previous content:
         English: expert_result may be absent in minimal config; in that case an
         empty dict is written instead of raising an error.
         """
+        system_message = SystemMessage(content=self.system_prompt)
         if self.self_expressing is False:
             conversation_history = self._extract_conversation_history(state["messages"][2:-1])
             report_prompt = self.USER_PROMPT_TEMPLATE.format(conversation_history=conversation_history)
-            raw_report = self.llm.invoke([HumanMessage(content=report_prompt)]).content
+            raw_report = self.llm.invoke([system_message, HumanMessage(content=report_prompt)]).content
         else:
-            conversation_history = self._extract_conversation_history(state["messages"], target_role=["AIMessage"])
+            conversation_history = self._extract_conversation_history(state["messages"], target_role=["AIMessage", "ToolMessage"])
             raw_report = self.FORMAT_PROMPT_TEMPLATE.format(previous_report_content=conversation_history)
 
-        final_response = self.llm_with_structured.invoke([HumanMessage(content=raw_report)]).model_dump()
-        final_response["semantic_result"] = self._load_tool_result(state, "semantic_analysis")
+        final_response = self.llm_with_structured.invoke([system_message, HumanMessage(content=raw_report)]).model_dump()
+        final_response["semantic_result"] = self._load_tool_result(state, "semantic_context_extraction")
         final_response["expert_result"] = self._load_tool_result(state, "expert_results")
         final_response["detail_report"] = conversation_history
 
@@ -98,7 +100,7 @@ Previous content:
                         name="report_conflict_tool",
                         tool_call_id=str(uuid.uuid4()),
                     ),
-                    AIMessage(content="update stage to: finally_report"),
+                    AIMessage(content="update stage to: forensic_report_formulation"),
                 ]
             )
         state.pop("remaining_steps", None)
@@ -160,6 +162,8 @@ Previous content:
             content_str = json.dumps(content, ensure_ascii=False, sort_keys=True) if isinstance(content, (dict, list)) else str(content)
             if reasoning:
                 content_str += f"\n[Reasoning]: {reasoning}"
+            if isinstance(msg, ToolMessage) and getattr(msg, "name", None):
+                role = f"{role}:{msg.name}"
             unique_key = f"[{role}]:{content_str}"
             if unique_key not in seen_contents:
                 seen_contents.add(unique_key)
@@ -170,14 +174,14 @@ Previous content:
         return "\n\n".join(history_parts)
 
 
-def create_reporter_node(config: dict, llm: ChatOpenAI, self_expressing: bool = False) -> Any:
+def create_report_formulation_node(config: dict, llm: ChatOpenAI, self_expressing: bool = False) -> Any:
     """Create a StateGraph reporter node.
 
-    中文说明: ForensicAgent 将该函数返回值注册为 finally_report 节点。
-    English: ForensicAgent registers the returned callable as the finally_report
+    中文说明: CommandAndReasoningCore 将该函数返回值注册为 forensic_report_formulation 节点。
+    English: CommandAndReasoningCore registers the returned callable as the forensic_report_formulation
     node.
     """
-    reporter = ForensicReporter(config, llm, self_expressing)
+    reporter = ForensicReportFormulator(config, llm, self_expressing)
 
     def reporter_node(state: CustomAgentState) -> Dict[str, Any]:
         return reporter.generate_report(state)

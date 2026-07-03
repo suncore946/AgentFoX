@@ -14,8 +14,8 @@ agent:
   # English: Whether to enable calibration profiles; keep false in the minimal release unless calibration assets are added.
   open_calibration: false
 
-  # 中文: 是否启用语义分析工具; 最小 test 流程需要开启。
-  # English: Whether to enable semantic analysis; required for the minimal test workflow.
+  # 中文: 是否启用 Semantic Context Extraction 工具; 最小 test 流程需要开启。
+  # English: Whether to enable Semantic Context Extraction; required for the minimal test workflow.
   open_semantic: true
 
   # 中文: 是否启用专家模型结果分析; 最小开源版不附带专家模型结果, 默认关闭。
@@ -118,8 +118,8 @@ logging:
   # English: Compression format for rotated logs.
   compression: "zip"
 
-# 中文: 轻量图像特征提取配置, 这些特征只作为语义分析提示上下文。
-# English: Lightweight image-feature extraction settings; these features are only prompt context for semantic analysis.
+# 中文: 轻量图像特征提取配置, 这些特征只作为 Semantic Context Extraction 提示上下文。
+# English: Lightweight image-feature extraction settings; these features are only prompt context for Semantic Context Extraction.
 feature_extraction:
   # 中文: 空间域统计特征。
   # English: Spatial-domain statistical features.
@@ -189,9 +189,9 @@ feature_extraction:
   # 中文: 语义特征/VLM 提示配置。
   # English: Semantic feature/VLM prompt configuration.
   semantic_llm:
-    # 中文: 语义分析提示词路径。
-    # English: Semantic-analysis prompt path.
-    prompt_path: "./forensic_agent/configs/prompts/semantic_analysis.txt"
+    # 中文: 语义上下文提取提示词路径。
+    # English: Semantic context extraction prompt path.
+    prompt_path: "./forensic_agent/configs/prompts/semantic_context_extraction.txt"
 
 # 中文: 数据集配置。
 # English: Dataset configuration.
@@ -208,8 +208,8 @@ datasets:
   # English: Optional runtime cache directory; empty means .agentfox_cache beside the first CSV.
   runtime_cache_dir:
 
-# 中文: 工具配置; 最小开源版默认只使用 SemanticAnalysis。
-# English: Tool configuration; the minimal release uses SemanticAnalysis by default.
+# 中文: 工具配置; 最小开源版默认只使用 SemanticContextExtraction。
+# English: Tool configuration; the minimal release uses SemanticContextExtraction by default.
 tools:
   # 中文: 专家分析工具配置; 仅高级版/自行补充工具后使用。
   # English: Expert-analysis tool settings; only for advanced versions or user-added tools.
@@ -225,12 +225,12 @@ tools:
     # English: Placeholder path for clustering-analysis prompt.
     prompt_path: "./forensic_agent/configs/prompts/cluster_analysis_prompt.txt"
 
-  # 中文: 语义分析工具配置。
-  # English: Semantic-analysis tool settings.
-  SemanticAnalysis:
-    # 中文: 语义/取证分析提示词路径; 最小开源版建议使用 semantic_analysis.txt。
-    # English: Semantic/forensic analysis prompt path; semantic_analysis.txt is recommended for the minimal release.
-    prompt_path: "./forensic_agent/configs/prompts/semantic_analysis.txt"
+  # 中文: Semantic Context Extraction 工具配置。
+  # English: Semantic Context Extraction tool settings.
+  SemanticContextExtraction:
+    # 中文: 语义/取证分析提示词路径; 最小开源版建议使用 semantic_context_extraction.txt。
+    # English: Semantic/forensic analysis prompt path; semantic_context_extraction.txt is recommended for the minimal release.
+    prompt_path: "./forensic_agent/configs/prompts/semantic_context_extraction.txt"
 
 # 中文: 模型画像/profile 配置; 最小开源版不附带这些资产, 以下路径都是占位示例。
 # English: Model/profile configuration; the minimal release does not ship these assets, paths below are placeholders.
@@ -251,8 +251,8 @@ profiles:
   # English: Calibration profile JSON path.
   calibration_profiles: "./profiles/calibration_profiles.json"
 
-  # 中文: 语义分析缓存/profile JSON 路径; 留空可使用运行时缓存。
-  # English: Semantic-analysis cache/profile JSON path; leave empty to use runtime cache.
+  # 中文: Semantic Context Extraction 缓存/profile JSON 路径; 留空可使用运行时缓存。
+  # English: Semantic Context Extraction cache/profile JSON path; leave empty to use runtime cache.
   semantic_profiles:
 
   # 中文: 专家分析 CSV 路径; 仅高级工具需要。

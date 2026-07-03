@@ -1,5 +1,34 @@
-# Byte-compiled / optimized / DLL files
 resources/x-fuse/*
+
+# AgentFoX data/model/runtime artifacts
+data/
+outputs/
+logs/
+resources/cluster_models/
+resources/datasets/
+resources/GenImage-Val/
+resources/display/
+resources/result/
+*.pkl
+*.pt
+*.pth
+*.ckpt
+*.db
+*.sqlite
+*.sqlite3
+*.csv.lock
+*.json.lock
+*.jsonl
+*.npy
+*.npz
+*.tmp
+.agentfox_cache/
+
+# Local editor and private config
+.vscode/
+.claude/
+
+# Byte-compiled / optimized / DLL files
 
 __pycache__/
 *.py[codz]

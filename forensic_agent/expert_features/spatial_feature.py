@@ -1,6 +1,6 @@
 """Spatial-domain lightweight feature extraction.
 
-中文说明: 提取 LBP、GLCM 和边缘统计, 用作语义分析提示上下文。
+中文说明: 提取 LBP、GLCM 和边缘统计, 用作 Semantic Context Extraction 提示上下文。
 English: Extracts LBP, GLCM, and edge statistics as context for semantic
 analysis prompts.
 """

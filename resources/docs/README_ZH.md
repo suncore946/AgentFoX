@@ -4,7 +4,7 @@
 
 本次开源范围只覆盖“用户有图片和标签 CSV，即可跑通 `agent_pipeline.py --mode test`”这一条路径。仓库不包含 API key、私有服务器 IP、个人绝对路径、图片资源、生成 profile、训练流水线、标注工具或专家模型资产。
 
-[English README](../README.md)
+[English README](../../README.md)
 
 ## 目录结构
 
@@ -18,23 +18,23 @@ AgentFoX/
 │   │   ├── agent_template.txt
 │   │   └── prompts/
 │   │       ├── reporter_prompt.txt
-│   │       └── semantic_analysis.txt
+│   │       └── semantic_context_extraction.txt
 │   ├── core/
-│   │   ├── forensic_agent.py
+│   │   ├── command_and_reasoning_core.py
 │   │   ├── forensic_llm.py
-│   │   ├── forensic_reporter.py
-│   │   ├── forensic_tools.py
-│   │   └── tools/semantic_analysis_tool.py
+│   │   ├── forensic_report_formulation.py
+│   │   ├── agentic_toolkit.py
+│   │   └── tools/semantic_context_extraction_tool.py
 │   ├── expert_features/
 │   ├── manager/
 │   ├── processor/
 │   └── utils/
-├── docs/README_ZH.md
+├── resources/docs/README_ZH.md
 ├── requirements.txt
 └── tests/
 ```
 
-默认流程只启用语义分析工具，并输出二分类结论：
+默认流程只启用 `SemanticContextExtraction`，再由 `ForensicReportFormulation` 输出二分类结论：
 
 - `0`：真实相机图像
 - `1`：AI 生成或伪造图像
@@ -141,7 +141,7 @@ outputs/agentfox_minimal/
 
 - `max_iterations`：LangGraph 推理最大轮数。
 - `per_workflow_workers`：预留给未来本地 worker；当前最小 CLI 串行运行。
-- `open_semantic`：启用语义分析工具。
+- `open_semantic`：启用 `semantic_context_extraction` 工具。
 - `open_expert`、`open_calibration`、`open_clustering`：最小版默认关闭。
 - `agent_template`：Agent 主提示词路径。
 - `reporter.prompt_path`：最终报告审计提示词路径。
@@ -158,7 +158,7 @@ outputs/agentfox_minimal/
 
 - `test_paths`：一个 CSV 路径或多个 CSV 路径。
 - `image_root`：可选，用于解析 CSV 中的相对 `image_path`。
-- `runtime_cache_dir`：可选，语义分析运行时缓存目录；默认在第一个 CSV 同级 `.agentfox_cache`。
+- `runtime_cache_dir`：可选，Semantic Context Extraction 运行时缓存目录；默认在第一个 CSV 同级 `.agentfox_cache`。
 
 `image_manager.*`
 
@@ -171,9 +171,9 @@ outputs/agentfox_minimal/
 - `log_dir`、`file_name`：日志文件位置。
 - `rotation`、`retention`：Loguru 日志轮转配置。
 
-`tools.SemanticAnalysis.prompt_path`
+`tools.SemanticContextExtraction.prompt_path`
 
-- 语义分析处理器使用的提示词路径。
+- 语义上下文提取处理器使用的提示词路径。
 
 ## 安全边界
 
@@ -187,6 +187,10 @@ outputs/agentfox_minimal/
 - 标注、模型训练或私有专家模型流水线
 
 真实端到端推理需要外部 LLM/VLM 服务。除非你提供有效 key 或本地 VLM 服务，否则本仓库不会跑真实联网 LLM 测试。
+
+## 许可证
+
+本代码开源版本使用 Apache License 2.0，详见 [LICENSE](../../LICENSE)。
 
 ## 验证命令
 

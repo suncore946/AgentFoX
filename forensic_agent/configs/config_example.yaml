@@ -9,21 +9,21 @@ agent:
   # English: Maximum reasoning iterations per image; the workflow stops at this limit to avoid infinite loops.
   max_iterations: 40
 
-  # 中文: 是否启用校准模块; benchmark_post 高级流程会开启, 最小开源运行可改为 false。
-  # English: Whether to enable calibration; benchmark_post advanced flow enables it, minimal open-source runs can set false.
-  open_calibration: true
+  # 中文: 是否启用校准模块; 最小开源版不附带校准资产, 默认关闭。
+  # English: Whether to enable calibration; the minimal release ships no calibration assets, so keep it false by default.
+  open_calibration: false
 
-  # 中文: 是否启用语义分析结果; 通常应开启。
-  # English: Whether to enable semantic-analysis evidence; usually enabled.
+  # 中文: 是否启用 Semantic Context Extraction; 最小开源流程通常开启。
+  # English: Whether to enable Semantic Context Extraction; usually enabled in the minimal workflow.
   open_semantic: true
 
-  # 中文: 是否启用专家模型分析; 需要用户自行提供专家模型结果和相关工具。
-  # English: Whether to enable expert-model analysis; requires user-provided expert outputs and tools.
-  open_expert: true
+  # 中文: 是否启用专家模型分析; 需要用户自行补充专家模型结果和相关工具。
+  # English: Whether to enable expert-model analysis; requires user-added expert outputs and tools.
+  open_expert: false
 
-  # 中文: 是否启用聚类分析; 需要用户自行提供聚类模型、缓存和 profile。
-  # English: Whether to enable clustering analysis; requires user-provided clustering models, caches, and profiles.
-  open_clustering: true
+  # 中文: 是否启用聚类分析; 需要用户自行补充聚类模型、缓存和 profile。
+  # English: Whether to enable clustering analysis; requires user-added clustering models, caches, and profiles.
+  open_clustering: false
 
   # 中文: Agent 主提示词模板路径。
   # English: Path to the main agent prompt template.
@@ -218,12 +218,12 @@ tools:
     # English: Placeholder path to the expert-analysis prompt.
     prompt_path: "./forensic_agent/configs/prompts/expert_analysis_prompt.txt"
 
-  # 中文: 语义分析工具配置; 最小开源流程主要依赖该工具。
-  # English: Semantic-analysis tool settings; the minimal open-source workflow mainly relies on this tool.
-  SemanticAnalysis:
-    # 中文: 语义分析提示词路径。
-    # English: Path to the semantic-analysis prompt.
-    prompt_path: "./forensic_agent/configs/prompts/semantic_analysis.txt"
+  # 中文: Semantic Context Extraction 工具配置; 最小开源流程主要依赖该工具。
+  # English: Semantic Context Extraction tool settings; the minimal open-source workflow mainly relies on this tool.
+  SemanticContextExtraction:
+    # 中文: 语义上下文提取提示词路径。
+    # English: Path to the semantic context extraction prompt.
+    prompt_path: "./forensic_agent/configs/prompts/semantic_context_extraction.txt"
 
     # 中文: 语义工具内部使用的空间域特征开关。
     # English: Spatial-feature switches used inside the semantic tool.

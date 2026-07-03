@@ -1,8 +1,8 @@
 """Base classes for AgentFoX tools.
 
-中文说明: 所有工具都实现 name/description/execute, 由 ForensicTools 自动适配到 LangChain。
+中文说明: 所有工具都实现 name/description/execute, 由 AgenticToolkit 自动适配到 LangChain。
 English: Every tool implements name/description/execute and is adapted to
-LangChain by ForensicTools.
+LangChain by AgenticToolkit.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ def skip_auto_register(cls):
     return cls
 
 
-class ToolsBase(ABC):
+class AgenticTool(ABC):
     """Abstract base class for forensic tools.
 
     中文说明: args_schema 默认从 Agent state 注入 image_path。

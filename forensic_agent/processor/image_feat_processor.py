@@ -1,4 +1,4 @@
-"""Image feature preparation for semantic analysis.
+"""Image feature preparation for Semantic Context Extraction.
 
 中文说明: 该处理器汇总轻量图像特征并调用 VLM 生成语义鉴伪 profile。
 English: This processor gathers lightweight image features and calls a VLM to
@@ -22,7 +22,7 @@ from .semantic_forgery_tracking_processor import SemanticForgeryTrackingProcesso
 
 
 class ImageFeatProcessor(BaseManager):
-    """Build semantic-analysis inputs for one image.
+    """Build Semantic Context Extraction inputs for one image.
 
     中文说明: 特征只作为 VLM 提示的辅助上下文, 不需要训练权重或私有资源。
     English: Features are only auxiliary context for the VLM prompt and do not
@@ -50,7 +50,7 @@ class ImageFeatProcessor(BaseManager):
 
         prompt_path = self.config.get("prompt_path")
         if not prompt_path:
-            raise ValueError("SemanticAnalysis.prompt_path is required.")
+            raise ValueError("SemanticContextExtraction.prompt_path is required.")
         self.forensic_traces = SemanticForgeryTrackingProcessor(prompt_path=prompt_path, forensic_llm=semantic_llm)
 
     def run(self, image_path: str | Path, *args, **kwargs):

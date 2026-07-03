@@ -44,8 +44,8 @@ logging:
   retention: 7 days
 
 tools:
-  SemanticAnalysis:
-    prompt_path: forensic_agent/configs/prompts/semantic_analysis.txt
+  SemanticContextExtraction:
+    prompt_path: forensic_agent/configs/prompts/semantic_context_extraction.txt
 
 feature_extraction:
   spatial:
