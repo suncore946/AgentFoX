@@ -1,5 +1,10 @@
 resources/x-fuse/*
-
+x-fuse-dataset/*
+!x-fuse-dataset/
+!x-fuse-dataset/x-fuse.json
+!x-fuse-dataset/x-fuse_with_predictions.json
+!x-fuse-dataset/supplement/
+!x-fuse-dataset/supplement/*.json
 # AgentFoX data/model/runtime artifacts
 data/
 outputs/
