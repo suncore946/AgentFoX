@@ -2,7 +2,7 @@
 
 本仓库提供 **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection** 的最小可用推理代码。
 
-本次开源范围只覆盖“用户有图片和标签 CSV，即可跑通 `agent_pipeline.py --mode test`”这一条路径。仓库不包含 API key、私有服务器 IP、个人绝对路径、图片资源、生成 profile、训练流水线、标注工具或专家模型资产。
+本次开源范围只覆盖“用户有图片和标签 CSV，即可跑通 `agent_pipeline.py --mode test`”这一条路径。X-FUSE 数据集单独分发，最新版本请从 [Google Drive](https://drive.google.com/file/d/1B8G8IEXB7Si1c21WkWpH5OmgvxbAVp9_/view?usp=sharing) 下载。仓库不包含 API key、私有服务器 IP、个人绝对路径、图片资源、生成 profile、训练流水线、标注工具或专家模型资产。
 
 [English README](../../README.md)
 
@@ -39,7 +39,7 @@ AgentFoX/
 - `0`：真实相机图像
 - `1`：AI 生成或伪造图像
 
-完整专家融合、校准、聚类 profile、训练、标注、GUI、生成资源和私有数据集不属于本次最小开源目标。
+完整专家融合、校准、聚类 profile、训练、标注、GUI、生成资源和私有数据集不属于本次最小开源目标。最新 X-FUSE 数据集请从 [Google Drive](https://drive.google.com/file/d/1B8G8IEXB7Si1c21WkWpH5OmgvxbAVp9_/view?usp=sharing) 下载。
 
 ## 环境安装
 
