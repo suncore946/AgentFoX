@@ -2,7 +2,7 @@
 
 Minimal open-source inference code for **AgentFoX: LLM Agent-Guided Fusion with eXplainability for AI-Generated Image Detection**.
 
-This release is scoped to the smallest runnable test path: a user provides images, a CSV with labels, and an LLM/VLM backend. The X-FUSE dataset is distributed separately; download the latest version from [Google Drive](https://drive.google.com/file/d/1B8G8IEXB7Si1c21WkWpH5OmgvxbAVp9_/view?usp=sharing). It does not include private API keys, server IPs, absolute paths, image resources, generated profiles, training pipelines, annotation tools, or expert-model assets.
+This release is scoped to the smallest runnable test path: a user provides images, a CSV with labels, and an LLM/VLM backend. The X-FUSE dataset is distributed separately; download the latest version from [Google Drive](https://drive.google.com/file/d/1B8G8IEXB7Si1c21WkWpH5OmgvxbAVp9_/view?usp=sharing).
 
 [中文文档](resources/docs/README_ZH.md)
 
@@ -38,8 +38,6 @@ The default workflow runs `SemanticContextExtraction` and then `ForensicReportFo
 
 - `0`: authentic camera-captured image
 - `1`: AI-generated or forged image
-
-Expert fusion, calibration, clustering profiles, training, labeling, GUI, generated resources, and private datasets are not part of this minimal release. Download the latest X-FUSE dataset from [Google Drive](https://drive.google.com/file/d/1B8G8IEXB7Si1c21WkWpH5OmgvxbAVp9_/view?usp=sharing).
 
 ## Installation
 
@@ -175,16 +173,7 @@ outputs/agentfox_minimal/
 
 - Prompt used by the semantic context extraction processor.
 
-## Security And Data Boundaries
-
-This repository intentionally does not include:
-
-- API keys or tokens
-- private server IPs
-- personal absolute paths
-- image resources or datasets
-- generated semantic/profile/cache/output data
-- annotation, model training, or private expert-model pipelines
+## Notes
 
 End-to-end inference requires an external LLM/VLM service. The repository does not run a real networked LLM test unless you provide valid credentials or a local service.
 
